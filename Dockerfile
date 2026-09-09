@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates openssl git wget \
     fonts-liberation fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg \
     fonts-kacst fonts-freefont-ttf fonts-noto-cjk fonts-noto-color-emoji \
-    libasound2t64 libatk-bridge2.0-0 libatk1.0-0 \
+    libasound2 libatk-bridge2.0-0 libatk1.0-0 \
     libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgbm1 \
     libgcc-s1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 \
     libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 \
