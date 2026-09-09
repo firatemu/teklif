@@ -1,0 +1,151 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum ProductType {
+  PLAN_BASED
+  FIXED
+}
+
+enum QuoteType {
+  CLASSIC
+  PLAN_COMPARISON
+}
+
+enum DiscountType {
+  PERCENT
+  AMOUNT
+}
+
+enum PlanChoice {
+  PLAN_1
+  PLAN_2
+  PLAN_3
+}
+
+enum PriceBasis {
+  FIRST_YEAR
+  RENEWAL
+}
+
+model Product {
+  id            Int         @id @default(autoincrement())
+  category      String
+  subCategory   String?
+  name          String
+  productType   ProductType
+
+  plan1FirstYear Float?
+  plan1Renewal   Float?
+  plan2FirstYear Float?
+  plan2Renewal   Float?
+  plan3FirstYear Float?
+  plan3Renewal   Float?
+
+  fixedPrice     Float?
+
+  isActive      Boolean     @default(true)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  classicItems        QuoteClassicItem[]
+  planComparisonItems QuotePlanComparisonItem[]
+}
+
+model Quote {
+  id               Int          @id @default(autoincrement())
+  quoteNumber      String       @unique
+  quoteType        QuoteType
+  quoteDate        DateTime     @default(now())
+
+  customerName      String
+  customerTaxOffice String?
+  customerTaxNumber String?
+  customerPhone     String?
+  customerEmail     String?
+
+  generalDiscountType  DiscountType?
+  generalDiscountValue Float?
+
+  vatRate          Float        @default(20)
+
+  subtotal         Float
+  netAfterDiscount Float
+  vatAmount        Float
+  totalAmount      Float
+
+  notes            String?
+  preparedByName   String?
+
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  classicItems        QuoteClassicItem[]
+  planComparisonItems QuotePlanComparisonItem[]
+}
+
+model QuoteClassicItem {
+  id            Int          @id @default(autoincrement())
+  quoteId       Int
+  quote         Quote        @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  productId     Int?
+  product       Product?     @relation(fields: [productId], references: [id])
+
+  displayName   String
+  selectedPlan  PlanChoice?
+  priceBasis    PriceBasis?
+  unitPrice     Float
+
+  quantity      Float        @default(1)
+
+  lineDiscountType  DiscountType?
+  lineDiscountValue Float?
+
+  lineTotal     Float
+
+  sortOrder     Int          @default(0)
+}
+
+model QuotePlanComparisonItem {
+  id            Int      @id @default(autoincrement())
+  quoteId       Int
+  quote         Quote    @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  productId     Int
+  product       Product  @relation(fields: [productId], references: [id])
+
+  displayName    String
+  plan1FirstYear Float
+  plan1Renewal   Float
+  plan2FirstYear Float
+  plan2Renewal   Float
+  plan3FirstYear Float
+  plan3Renewal   Float
+
+  sortOrder     Int      @default(0)
+}
+
+model CompanySettings {
+  id            Int      @id @default(1)
+  name          String   @default("Firma Adi")
+  shortName     String   @default("Firma")
+  tagline       String   @default("")
+  address       String   @default("")
+  taxOffice     String   @default("")
+  taxNumber     String   @default("")
+  phone         String   @default("")
+  phone2        String   @default("")
+  email         String   @default("")
+  website       String   @default("")
+  city          String   @default("")
+  logoBase64    String?
+  logoMimeType  String?
+  updatedAt     DateTime @updatedAt
+}
