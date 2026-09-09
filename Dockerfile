@@ -3,6 +3,7 @@ FROM node:22-bookworm-slim AS base
 ENV NEXT_TELEMETRY_DISABLED=1 \
     PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+# Keep NODE_ENV unset in base/deps/builder so npm ci installs devDependencies (Tailwind etc.)
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,7 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends chromium \
  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
-RUN npm ci
+RUN npm ci --include=dev
 
 FROM deps AS builder
 ENV NEXT_TELEMETRY_DISABLED=1 \
