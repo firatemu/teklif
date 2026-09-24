@@ -77,6 +77,7 @@ export async function generateQuotePdf(quote: any): Promise<Buffer> {
     await page.setContent(html, {
       waitUntil: "domcontentloaded",
     });
+    await page.evaluate(() => document.fonts.ready);
 
     const pdfBuffer = await page.pdf({
       format: "A4",

@@ -1,4 +1,5 @@
 import { formatCurrency, formatDate } from "@/lib/formatters";
+import { PDF_FONT_FAMILY, pdfFontFaceCss } from "./fonts";
 import type { CompanySettingsForPdf } from "./generator";
 
 /* ─────────────────────────────────────────────────────────────────
@@ -258,13 +259,14 @@ export function renderPlanComparisonTemplate(quote: any, company: CompanySetting
 <meta charset="UTF-8">
 <title>${quote.quoteNumber}</title>
 <style>
+  ${pdfFontFaceCss()}
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   html, body {
     height: 100%;
   }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: ${PDF_FONT_FAMILY};
     margin: 0; padding: 22px 28px; color: #0f172a; background: #ffffff;
     font-size: 10px; line-height: 1.45;
     font-feature-settings: "tnum";
@@ -436,13 +438,14 @@ export function renderClassicTemplate(quote: any, company: CompanySettingsForPdf
 <meta charset="UTF-8">
 <title>${quote.quoteNumber}</title>
 <style>
+  ${pdfFontFaceCss()}
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   html, body {
     height: 100%;
   }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: ${PDF_FONT_FAMILY};
     margin: 0; padding: 22px 28px; color: #0f172a; background: #ffffff;
     font-size: 10px; line-height: 1.45;
     font-feature-settings: "tnum";
