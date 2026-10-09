@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Save, Upload, Trash2, Building2, Phone, Mail, Globe, MapPin, FileText, ImageIcon } from "lucide-react";
+import {
+  Save, Upload, Trash2, Building2, Phone, Mail,
+  Globe, MapPin, FileText, ImageIcon, ShieldCheck,
+} from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
+import { PageLoader, Alert } from "@/components/ui/States";
 
 interface CompanySettingsData {
   id: number;
@@ -20,28 +26,28 @@ interface CompanySettingsData {
 }
 
 export default function SettingsPage() {
+  const notify = useToast();
   const [settings, setSettings] = useState<CompanySettingsData | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [pendingLogoDelete, setPendingLogoDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadSettings();
     loadLogo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function loadSettings() {
     try {
       const res = await fetch("/api/settings");
-      if (res.ok) {
-        const data = await res.json();
-        setSettings(data);
-      }
-    } catch (e) {
-      console.error("Settings load error:", e);
+      if (res.ok) setSettings(await res.json());
+      else notify.error("Ayarlar yuklenemedi");
+    } catch {
+      notify.error("Baglanti hatasi", "Ayarlar yuklenemedi.");
     } finally {
       setLoading(false);
     }
@@ -52,19 +58,16 @@ export default function SettingsPage() {
       const res = await fetch("/api/settings/logo");
       if (res.ok) {
         const data = await res.json();
-        if (data.hasLogo) {
-          setLogoUrl(data.logoDataUrl);
-        }
+        if (data.hasLogo) setLogoUrl(data.logoDataUrl);
       }
-    } catch (e) {
-      console.error("Logo load error:", e);
+    } catch {
+      /* logo load failure is non-blocking */
     }
   }
 
   async function handleSave() {
     if (!settings) return;
     setSaving(true);
-    setMessage(null);
     try {
       const res = await fetch("/api/settings", {
         method: "PUT",
@@ -72,13 +75,13 @@ export default function SettingsPage() {
         body: JSON.stringify(settings),
       });
       if (res.ok) {
-        setMessage({ type: "success", text: "Firma bilgileri başarıyla kaydedildi." });
+        notify.success("Firma bilgileri kaydedildi", "Degisiklikler bir sonraki PDF'te yansiyacak.");
       } else {
         const err = await res.json();
-        setMessage({ type: "error", text: err.error || "Kaydetme hatası." });
+        notify.error("Kaydedilemedi", err.error || "Bir hata olustu.");
       }
     } catch {
-      setMessage({ type: "error", text: "Bağlantı hatası." });
+      notify.error("Baglanti hatasi", "Ayarlar kaydedilemedi.");
     } finally {
       setSaving(false);
     }
@@ -86,38 +89,34 @@ export default function SettingsPage() {
 
   async function handleLogoUpload(file: File) {
     setUploading(true);
-    setMessage(null);
-    const formData = new FormData();
-    formData.append("logo", file);
     try {
-      const res = await fetch("/api/settings/logo", {
-        method: "POST",
-        body: formData,
-      });
+      const fd = new FormData();
+      fd.append("logo", file);
+      const res = await fetch("/api/settings/logo", { method: "POST", body: fd });
       if (res.ok) {
-        setMessage({ type: "success", text: "Logo başarıyla yüklendi." });
+        notify.success("Logo yuklendi", file.name);
         loadLogo();
       } else {
         const err = await res.json();
-        setMessage({ type: "error", text: err.error || "Logo yükleme hatası." });
+        notify.error("Logo yuklenemedi", err.error || "Gorsel yuklenemedi.");
       }
     } catch {
-      setMessage({ type: "error", text: "Bağlantı hatası." });
+      notify.error("Baglanti hatasi", "Logo yuklenemedi.");
     } finally {
       setUploading(false);
     }
   }
 
   async function handleLogoDelete() {
-    if (!confirm("Logoyu silmek istediğinize emin misiniz?")) return;
     try {
       const res = await fetch("/api/settings/logo", { method: "DELETE" });
       if (res.ok) {
         setLogoUrl(null);
-        setMessage({ type: "success", text: "Logo silindi." });
+        setPendingLogoDelete(false);
+        notify.success("Logo silindi");
       }
     } catch {
-      setMessage({ type: "error", text: "Logo silme hatası." });
+      notify.error("Baglanti hatasi", "Logo silinemedi.");
     }
   }
 
@@ -127,278 +126,259 @@ export default function SettingsPage() {
     if (file) handleLogoUpload(file);
   }
 
-  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) handleLogoUpload(file);
-  }
-
   function updateField(field: keyof CompanySettingsData, value: string) {
     if (!settings) return;
     setSettings({ ...settings, [field]: value });
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="animate-spin h-8 w-8 border-4 border-blue-600 border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  if (loading) return <PageLoader label="Ayarlar yukleniyor" />;
 
   if (!settings) {
     return (
-      <div className="text-center py-20 text-slate-500">Ayarlar yüklenemedi.</div>
+      <div className="mx-auto max-w-4xl px-4 py-8">
+        <Alert tone="danger" title="Ayarlar yuklenemedi">
+          Sayfayi yenilemeyi deneyin.
+        </Alert>
+      </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-          <Building2 className="h-7 w-7 text-blue-600" />
-          Firma Ayarları
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Firma bilgilerinizi güncelleyin. Bu bilgiler teklif PDF&apos;lerinde kullanılacaktır.
-        </p>
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            <Building2 className="h-6 w-6 text-brand-600" />
+            Firma Ayarlari
+          </h1>
+          <p className="page-subtitle">
+            Bu bilgiler teklif PDF'lerinde kullanilir
+          </p>
+        </div>
       </div>
 
-      {message && (
-        <div
-          className={`mb-6 rounded-lg px-4 py-3 text-sm font-medium ${
-            message.type === "success"
-              ? "bg-green-50 text-green-700 border border-green-200"
-              : "bg-red-50 text-red-700 border border-red-200"
-          }`}
-        >
-          {message.text}
-        </div>
-      )}
-
-      {/* Logo Section */}
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-          <ImageIcon className="h-5 w-5 text-blue-600" />
+      {/* Logo */}
+      <section className="surface mt-6 p-6">
+        <h2 className="mb-5 flex items-center gap-2 text-base font-bold text-slate-900">
+          <ImageIcon className="h-5 w-5 text-brand-600" />
           Firma Logosu
         </h2>
-        <div className="flex items-start gap-6">
-          {/* Logo Preview */}
-          <div className="flex-shrink-0">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+          <div className="flex shrink-0 flex-col items-center gap-2">
             {logoUrl ? (
-              <div className="relative group">
+              <div className="group relative">
                 <img
                   src={logoUrl}
                   alt="Firma logosu"
-                  className="h-24 w-24 rounded-xl object-contain border border-slate-200 bg-white p-2"
+                  className="h-28 w-28 rounded-xl border border-slate-200 bg-white p-2 object-contain"
                 />
                 <button
-                  onClick={handleLogoDelete}
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-red-600"
+                  type="button"
+                  onClick={() => setPendingLogoDelete(true)}
+                  aria-label="Logoyu sil"
+                  className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-danger-600 text-white opacity-0 shadow-md transition-opacity hover:bg-danger-700 focus-visible:opacity-100 group-hover:opacity-100"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
             ) : (
-              <div className="h-24 w-24 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center bg-slate-50">
+              <div className="flex h-28 w-28 items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50">
                 <ImageIcon className="h-8 w-8 text-slate-400" />
               </div>
             )}
+            {logoUrl && (
+              <button
+                type="button"
+                onClick={() => setPendingLogoDelete(true)}
+                className="text-xs font-semibold text-danger-600 hover:underline"
+              >
+                Logoyu kaldir
+              </button>
+            )}
           </div>
 
-          {/* Upload Area */}
           <div
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
             onClick={() => fileInputRef.current?.click()}
-            className="flex-1 cursor-pointer rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-6 text-center hover:border-blue-400 hover:bg-blue-50 transition-colors"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") fileInputRef.current?.click();
+            }}
+            className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center transition-colors hover:border-brand-400 hover:bg-brand-50/40"
           >
-            <Upload className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+            <Upload className="mb-2 h-7 w-7 text-slate-400" />
             <p className="text-sm font-medium text-slate-700">
-              {uploading ? "Yükleniyor..." : "Logo yüklemek için tıklayın veya sürükleyin"}
+              {uploading ? "Yukleniyor..." : "Logo yuklemek icin tiklayin veya surukleyin"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">PNG, JPG veya WebP • Maks. 2MB</p>
+            <p className="mt-1 text-xs text-slate-500">PNG, JPG veya WebP - Maks. 2MB</p>
             <input
               ref={fileInputRef}
               type="file"
               accept="image/png,image/jpeg,image/webp"
-              onChange={handleFileSelect}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleLogoUpload(file);
+              }}
               className="hidden"
             />
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Company Info Form */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-blue-600" />
+      {/* Company info */}
+      <section className="surface mt-5 p-6">
+        <h2 className="mb-6 flex items-center gap-2 text-base font-bold text-slate-900">
+          <FileText className="h-5 w-5 text-brand-600" />
           Firma Bilgileri
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Firma Adı */}
+        <div className="grid gap-5 md:grid-cols-2">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <Building2 className="inline h-4 w-4 mr-1 text-slate-400" />
-              Firma Adı
-            </label>
+            <label className="field-label">Firma Adi</label>
             <input
               type="text"
               value={settings.name}
               onChange={(e) => updateField("name", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              placeholder="Firma Adınız Ltd. Şti."
+              className="field"
+              placeholder="Firma Adiniz Ltd. Sti."
             />
           </div>
-
-          {/* Kısa Ad */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Kısa Ad</label>
+            <label className="field-label">Kisa Ad</label>
             <input
               type="text"
               value={settings.shortName}
               onChange={(e) => updateField("shortName", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              placeholder="Firma Kısa Adı"
+              className="field"
+              placeholder="Firma Kisa Adi"
             />
           </div>
-
-          {/* Slogan/Tagline */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Slogan / Ünvan</label>
+            <label className="field-label">Slogan / Unvan</label>
             <input
               type="text"
               value={settings.tagline}
               onChange={(e) => updateField("tagline", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              placeholder="Yetkili İş Ortağı"
+              className="field"
+              placeholder="Yetkili Is Ortagi"
             />
           </div>
-
-          {/* Adres */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <MapPin className="inline h-4 w-4 mr-1 text-slate-400" />
+            <label className="field-label">
+              <MapPin className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
               Adres
             </label>
             <textarea
               value={settings.address}
               onChange={(e) => updateField("address", e.target.value)}
               rows={2}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none resize-none"
+              className="field resize-none"
               placeholder="Tam adres"
             />
           </div>
-
-          {/* Şehir */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Şehir</label>
+            <label className="field-label">Sehir</label>
             <input
               type="text"
               value={settings.city}
               onChange={(e) => updateField("city", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              placeholder="İstanbul"
+              className="field"
+              placeholder="Istanbul"
             />
           </div>
-
-          {/* Vergi Dairesi */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Vergi Dairesi</label>
+            <label className="field-label">Vergi Dairesi</label>
             <input
               type="text"
               value={settings.taxOffice}
               onChange={(e) => updateField("taxOffice", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
-              placeholder="Vergi Dairesi Adı"
+              className="field"
+              placeholder="Vergi Dairesi Adi"
             />
           </div>
-
-          {/* Vergi Numarası */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">Vergi Numarası</label>
+            <label className="field-label">Vergi Numarasi</label>
             <input
               type="text"
               value={settings.taxNumber}
               onChange={(e) => updateField("taxNumber", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="field tabular"
               placeholder="1234567890"
             />
           </div>
-
-          {/* Telefon 1 */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <Phone className="inline h-4 w-4 mr-1 text-slate-400" />
+            <label className="field-label">
+              <Phone className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
               Telefon 1
             </label>
             <input
               type="text"
               value={settings.phone}
               onChange={(e) => updateField("phone", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="field"
               placeholder="0 (212) 000 00 00"
             />
           </div>
-
-          {/* Telefon 2 */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <Phone className="inline h-4 w-4 mr-1 text-slate-400" />
-              Telefon 2
-            </label>
+            <label className="field-label">Telefon 2</label>
             <input
               type="text"
               value={settings.phone2}
               onChange={(e) => updateField("phone2", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="field"
               placeholder="0 (532) 000 00 00"
             />
           </div>
-
-          {/* E-posta */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <Mail className="inline h-4 w-4 mr-1 text-slate-400" />
+            <label className="field-label">
+              <Mail className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
               E-Posta
             </label>
             <input
               type="email"
               value={settings.email}
               onChange={(e) => updateField("email", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="field"
               placeholder="info@firma.com"
             />
           </div>
-
-          {/* Web Sitesi */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <Globe className="inline h-4 w-4 mr-1 text-slate-400" />
+            <label className="field-label">
+              <Globe className="mr-1 inline h-3.5 w-3.5 text-slate-400" />
               Web Sitesi
             </label>
             <input
               type="text"
               value={settings.website}
               onChange={(e) => updateField("website", e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+              className="field"
               placeholder="www.firma.com"
             />
           </div>
         </div>
 
-        {/* Save Button */}
-        <div className="mt-8 flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
+        <div className="mt-8 flex items-center justify-between border-t border-slate-200 pt-5">
+          <p className="flex items-center gap-1.5 text-xs text-slate-400">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Degisiklikler bir sonraki PDF ciktisinda yansiyacak
+          </p>
+          <button onClick={handleSave} disabled={saving} className="btn btn-primary">
             <Save className="h-4 w-4" />
             {saving ? "Kaydediliyor..." : "Kaydet"}
           </button>
         </div>
-      </div>
+      </section>
+
+      <ConfirmDialog
+        open={pendingLogoDelete}
+        onCancel={() => setPendingLogoDelete(false)}
+        onConfirm={handleLogoDelete}
+        title="Logoyu sil"
+        description="Firma logosu kaldirilacak. PDF ciktilarinda logo gosterilmeyecek."
+        confirmLabel="Logoyu Sil"
+      />
     </div>
   );
 }

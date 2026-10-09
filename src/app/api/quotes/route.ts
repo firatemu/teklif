@@ -153,6 +153,7 @@ export async function POST(request: Request) {
           quoteNumber: tempNumber,
           quoteType: data.quoteType as QuoteType,
           quoteDate: data.quoteDate ? new Date(data.quoteDate) : new Date(),
+          validUntil: data.validUntil ? new Date(data.validUntil) : null,
           customerName: data.customerName.trim(),
           customerTaxOffice: data.customerTaxOffice?.trim() || null,
           customerTaxNumber: data.customerTaxNumber?.trim() || null,

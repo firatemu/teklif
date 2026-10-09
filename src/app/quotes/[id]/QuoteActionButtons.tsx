@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, Edit, Copy, Trash2, Printer } from "lucide-react";
+import { Download, Edit, Copy, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/Toast";
 
 interface QuoteActionButtonsProps {
   quoteId: number;
@@ -17,7 +19,9 @@ export default function QuoteActionButtons({
   quoteNumber,
 }: QuoteActionButtonsProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const notify = useToast();
+  const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const editPath =
     quoteType === "CLASSIC"
@@ -25,86 +29,88 @@ export default function QuoteActionButtons({
       : `/quotes/plan-comparison/${quoteId}/edit`;
 
   const handleDuplicate = async () => {
-    if (!confirm(`${quoteNumber} numaralı teklifi çoğaltmak istiyor musunuz?`)) return;
-
-    setLoading(true);
+    setBusy(true);
     try {
       const res = await fetch(`/api/quotes/${quoteId}/duplicate`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Çoğaltılamadı");
-        setLoading(false);
+        notify.error("Cogaltilamadi", data.error || "Bilinmeyen bir hata olustu.");
         return;
       }
+      notify.success("Teklif cogaltildi", quoteNumber + " kopyalandi.");
       router.push(`/quotes/${data.id}`);
       router.refresh();
     } catch {
-      alert("Hata oluştu");
-      setLoading(false);
+      notify.error("Baglanti hatasi", "Teklif cogaltilamadi.");
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm(`${quoteNumber} numaralı teklifi kalıcı olarak silmek istediğinize emin misiniz?`)) return;
-
-    setLoading(true);
+    setBusy(true);
     try {
       const res = await fetch(`/api/quotes/${quoteId}`, { method: "DELETE" });
       if (!res.ok) {
-        alert("Silinemedi");
-        setLoading(false);
+        notify.error("Silinemedi", "Teklif silinirken bir hata olustu.");
         return;
       }
+      notify.success("Teklif silindi", quoteNumber + " kaldirildi.");
+      setConfirmOpen(false);
       router.push("/");
       router.refresh();
     } catch {
-      alert("Silinirken hata oluştu");
-      setLoading(false);
+      notify.error("Baglanti hatasi", "Teklif silinemedi.");
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleDownloadPdf = () => {
-    window.open(`/api/quotes/${quoteId}/pdf`, "_blank");
-  };
-
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={handleDownloadPdf}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-800 transition-colors"
-      >
-        <Download className="h-4 w-4" />
-        PDF İndir
-      </button>
+    <>
+      <div className="no-print flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => window.open(`/api/quotes/${quoteId}/pdf`, "_blank")}
+          className="btn btn-primary"
+        >
+          <Download className="h-4 w-4" />
+          PDF Indir
+        </button>
+        <Link href={editPath} className="btn btn-secondary">
+          <Edit className="h-3.5 w-3.5" />
+          Duzenle
+        </Link>
+        <button
+          type="button"
+          onClick={handleDuplicate}
+          disabled={busy}
+          className="btn btn-secondary"
+        >
+          <Copy className="h-3.5 w-3.5" />
+          Cogalt
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirmOpen(true)}
+          disabled={busy}
+          className="btn btn-danger-soft"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Sil
+        </button>
+      </div>
 
-      <Link
-        href={editPath}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-      >
-        <Edit className="h-3.5 w-3.5" />
-        Düzenle
-      </Link>
-
-      <button
-        type="button"
-        onClick={handleDuplicate}
-        disabled={loading}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
-      >
-        <Copy className="h-3.5 w-3.5" />
-        Çoğalt
-      </button>
-
-      <button
-        type="button"
-        onClick={handleDelete}
-        disabled={loading}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/60 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors disabled:opacity-50"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-        Sil
-      </button>
-    </div>
+      <ConfirmDialog
+        open={confirmOpen}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="Teklifi sil"
+        description={
+          quoteNumber + " numarali teklif ve tum kalemleri kalici olarak silinecek."
+        }
+        confirmLabel="Sil"
+      />
+    </>
   );
 }

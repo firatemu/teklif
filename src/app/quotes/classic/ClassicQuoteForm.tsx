@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Modal from "@/components/ui/Modal";
 import {
   formatCurrency,
   formatDate,
@@ -75,6 +76,11 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
     initialQuote?.quoteDate
       ? new Date(initialQuote.quoteDate).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0]
+  );
+  const [validUntil, setValidUntil] = useState(
+    initialQuote?.validUntil
+      ? new Date(initialQuote.validUntil).toISOString().split("T")[0]
+      : ""
   );
 
   const [items, setItems] = useState<ClassicItemForm[]>(() => {
@@ -290,6 +296,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
       const payload = {
         quoteType: "CLASSIC",
         quoteDate,
+        validUntil: validUntil || null,
         customerName: customerName.trim(),
         customerTaxOffice: customerTaxOffice.trim() || null,
         customerTaxNumber: customerTaxNumber.trim() || null,
@@ -351,7 +358,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
             type="button"
             onClick={() => handleSaveQuote(false)}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 field-label shadow-xs hover:bg-slate-50 transition-colors disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
             {saving ? "Kaydediliyor..." : "Kaydet"}
@@ -360,7 +367,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
             type="button"
             onClick={() => handleSaveQuote(true)}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-800 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 btn btn-primary disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             Kaydet & PDF İndir
@@ -384,29 +391,39 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-slate-700">Müşteri / Firma Adı *</label>
+            <label className="block field-label">Müşteri / Firma Adı *</label>
             <input
               type="text"
               required
               placeholder="Örn: ABC Teknoloji San. ve Tic. Ltd. Şti."
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+              className="field"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Teklif Tarihi</label>
+            <label className="block field-label">Teklif Tarihi</label>
             <input
               type="date"
               value={quoteDate}
               onChange={(e) => setQuoteDate(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-300 p-2 text-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+              className="field"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Vergi Dairesi</label>
+            <label className="block field-label">Son Geçerlilik Tarihi</label>
+            <input
+              type="date"
+              value={validUntil}
+              onChange={(e) => setValidUntil(e.target.value)}
+              className="field"
+            />
+          </div>
+
+          <div>
+            <label className="block field-label">Vergi Dairesi</label>
             <input
               type="text"
               placeholder="Örn: Avcılar V.D."
@@ -417,7 +434,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Vergi Numarası / TCKN</label>
+            <label className="block field-label">Vergi Numarası / TCKN</label>
             <input
               type="text"
               placeholder="1234567890"
@@ -428,7 +445,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">Telefon</label>
+            <label className="block field-label">Telefon</label>
             <div className="relative mt-1">
               <Phone className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
@@ -436,13 +453,13 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                 placeholder="0 (212) 000 00 00"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                className="block w-full rounded-lg border border-slate-300 py-2 pl-8 pr-2 text-xs"
+                className="field"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700">E-Posta</label>
+            <label className="block field-label">E-Posta</label>
             <div className="relative mt-1">
               <Mail className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 h-3.5 w-3.5 text-slate-400" />
               <input
@@ -450,7 +467,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                 placeholder="muhasebe@firma.com"
                 value={customerEmail}
                 onChange={(e) => setCustomerEmail(e.target.value)}
-                className="block w-full rounded-lg border border-slate-300 py-2 pl-8 pr-2 text-xs"
+                className="field"
               />
             </div>
           </div>
@@ -467,7 +484,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
           <button
             type="button"
             onClick={handleOpenItemModal}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-100 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-brand-700 hover:bg-blue-100 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Kalem Ekle
@@ -712,10 +729,22 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
       </div>
 
       {/* Add Item Modal */}
-      {isItemModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-            <h2 className="text-base font-bold text-slate-900 mb-4">Teklif Kalemi Ekle</h2>
+      <Modal
+        open={isItemModalOpen}
+        onClose={() => setIsItemModalOpen(false)}
+        title="Teklif Kalemi Ekle"
+        size="md"
+        footer={
+          <>
+            <button type="button" className="btn btn-secondary" onClick={() => setIsItemModalOpen(false)}>
+              Iptal
+            </button>
+            <button type="submit" form="classic-item-form" className="btn btn-primary">
+              Tabloya Ekle
+            </button>
+          </>
+        }
+      >
 
             {/* Source Toggle */}
             <div className="flex rounded-lg bg-slate-100 p-1 mb-4 text-xs font-semibold">
@@ -743,12 +772,12 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
               </button>
             </div>
 
-            <form onSubmit={handleAddItem} className="space-y-4">
+            <form id="classic-item-form" onSubmit={handleAddItem} className="space-y-4">
               {modalSource === "CATALOG" ? (
                 <>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700">Kategori</label>
+                      <label className="block field-label">Kategori</label>
                       <select
                         value={selectedCat}
                         onChange={(e) => {
@@ -775,7 +804,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
 
                     {subCategories.length > 0 && (
                       <div>
-                        <label className="block text-xs font-semibold text-slate-700">Alt Kategori</label>
+                        <label className="block field-label">Alt Kategori</label>
                         <select
                           value={selectedSubCat}
                           onChange={(e) => {
@@ -799,7 +828,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700">Ürün Seçimi</label>
+                    <label className="block field-label">Ürün Seçimi</label>
                     <select
                       value={selectedProdId ?? ""}
                       onChange={(e) => setSelectedProdId(Number(e.target.value))}
@@ -843,7 +872,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                   )}
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700">
+                    <label className="block field-label">
                       Birim Fiyat (₺) *
                     </label>
                     <input
@@ -863,7 +892,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700">
+                    <label className="block field-label">
                       Ürün / Hizmet Açıklaması *
                     </label>
                     <input
@@ -877,7 +906,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700">Birim Fiyat (₺) *</label>
+                    <label className="block field-label">Birim Fiyat (₺) *</label>
                     <input
                       type="number"
                       step="0.01"
@@ -894,7 +923,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
               {/* Quantity and Line Discount */}
               <div className="grid grid-cols-3 gap-3 border-t border-slate-100 pt-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700">Miktar</label>
+                  <label className="block field-label">Miktar</label>
                   <input
                     type="number"
                     min="1"
@@ -906,7 +935,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700">İskonto Türü</label>
+                  <label className="block field-label">İskonto Türü</label>
                   <select
                     value={modalDiscType || ""}
                     onChange={(e) => setModalDiscType((e.target.value as any) || null)}
@@ -919,7 +948,7 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700">İskonto Değeri</label>
+                  <label className="block field-label">İskonto Değeri</label>
                   <input
                     type="number"
                     step="0.01"
@@ -932,25 +961,8 @@ export default function ClassicQuoteForm({ initialQuote }: ClassicQuoteFormProps
                 </div>
               </div>
 
-              <div className="mt-6 flex justify-end gap-2 border-t border-slate-200 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsItemModalOpen(false)}
-                  className="rounded-lg border border-slate-300 px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-lg bg-blue-700 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-800"
-                >
-                  Kalemi Ekle
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              </form>
+      </Modal>
     </div>
   );
 }

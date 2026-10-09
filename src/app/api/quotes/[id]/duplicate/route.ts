@@ -38,6 +38,7 @@ export async function POST(
           quoteNumber: tempNumber,
           quoteType: original.quoteType,
           quoteDate: new Date(), // Today
+          validUntil: original.validUntil,
           customerName: original.customerName,
           customerTaxOffice: original.customerTaxOffice,
           customerTaxNumber: original.customerTaxNumber,

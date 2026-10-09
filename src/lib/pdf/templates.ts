@@ -121,10 +121,14 @@ function renderModernHeader(quote: any, company: CompanySettingsForPdf, _docTitl
                   <td style="color: #64748b; padding: 3px 0; font-weight: 500;">Düzenleme Tarihi:</td>
                   <td style="text-align: right; color: #0f172a; font-weight: 700; padding: 3px 0;">${formatDate(quote.quoteDate)}</td>
                 </tr>
-                <tr>
+                ${
+                  quote.validUntil
+                    ? `<tr>
                   <td style="color: #64748b; padding: 3px 0; font-weight: 500;">Geçerlilik Süresi:</td>
-                  <td style="text-align: right; color: #0f172a; font-weight: 700; padding: 3px 0;">15 Gün</td>
-                </tr>
+                  <td style="text-align: right; color: #0f172a; font-weight: 700; padding: 3px 0;">${formatDate(quote.validUntil)}</td>
+                </tr>`
+                    : ""
+                }
                 ${
                   quote.preparedByName
                     ? `<tr>
@@ -373,9 +377,6 @@ ${renderCustomerSection(quote)}
     </span>
   </div>
   <ul style="margin: 0; padding-left: 18px; font-size: 9.5px; color: #334155; line-height: 1.65;">
-    <li style="margin-bottom: 3px;">Fiyatlarımıza KDV dahil değildir.</li>
-    <li style="margin-bottom: 3px;">Teklifimiz hazırlandığı tarihten itibaren 15 gün süreyle geçerlidir.</li>
-    <li style="margin-bottom: 3px;">Fiyat listesi liste fiyatı baz alınarak hazırlanmıştır.</li>
     ${notes.map((n: string) => `<li style="margin-bottom: 3px;">${n}</li>`).join("")}
   </ul>
 </div>
@@ -498,9 +499,6 @@ ${renderCustomerSection(quote)}
             TEKLİF NOTLARI VE KOŞULLAR
           </div>
           <ul style="margin: 0; padding-left: 16px; font-size: 9px; color: #475569; line-height: 1.6;">
-            <li>Teklifimiz hazırlandığı tarihten itibaren 15 gün süreyle geçerlidir.</li>
-            <li>Fiyatlarımıza KDV dahil değildir.</li>
-            <li>Ödeme vadeleri teklifte aksi belirtilmedikçe sipariş anında peşindir.</li>
             ${notes.map((n: string) => `<li>${n}</li>`).join("")}
           </ul>
         </div>

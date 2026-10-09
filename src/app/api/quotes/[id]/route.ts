@@ -160,6 +160,7 @@ export async function PUT(
         where: { id: quoteId },
         data: {
           quoteDate: data.quoteDate ? new Date(data.quoteDate) : existing.quoteDate,
+          validUntil: data.validUntil ? new Date(data.validUntil) : null,
           customerName: data.customerName.trim(),
           customerTaxOffice: data.customerTaxOffice?.trim() || null,
           customerTaxNumber: data.customerTaxNumber?.trim() || null,

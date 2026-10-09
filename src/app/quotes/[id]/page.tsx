@@ -3,15 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { companyConfig } from "@/config/company";
 import { formatCurrency, formatDate } from "@/lib/formatters";
-import {
-  FileText,
-  Download,
-  Edit,
-  ArrowLeft,
-  Copy,
-  Trash2,
-  Printer,
-} from "lucide-react";
+import { ArrowLeft, FileText, Printer, Layers } from "lucide-react";
 import QuoteActionButtons from "./QuoteActionButtons";
 
 export default async function QuoteDetailPage({
@@ -35,128 +27,158 @@ export default async function QuoteDetailPage({
 
   const isClassic = quote.quoteType === "CLASSIC";
 
-  // If plan comparison, calculate column totals
-  const p1FirstTotal = quote.planComparisonItems.reduce((acc, it) => acc + (it.plan1FirstYear || 0), 0);
-  const p1RenTotal = quote.planComparisonItems.reduce((acc, it) => acc + (it.plan1Renewal || 0), 0);
-  const p2FirstTotal = quote.planComparisonItems.reduce((acc, it) => acc + (it.plan2FirstYear || 0), 0);
-  const p2RenTotal = quote.planComparisonItems.reduce((acc, it) => acc + (it.plan2Renewal || 0), 0);
-  const p3FirstTotal = quote.planComparisonItems.reduce((acc, it) => acc + (it.plan3FirstYear || 0), 0);
-  const p3RenTotal = quote.planComparisonItems.reduce((acc, it) => acc + (it.plan3Renewal || 0), 0);
+  const p1FirstTotal = quote.planComparisonItems.reduce((a, i) => a + (i.plan1FirstYear || 0), 0);
+  const p1RenTotal = quote.planComparisonItems.reduce((a, i) => a + (i.plan1Renewal || 0), 0);
+  const p2FirstTotal = quote.planComparisonItems.reduce((a, i) => a + (i.plan2FirstYear || 0), 0);
+  const p2RenTotal = quote.planComparisonItems.reduce((a, i) => a + (i.plan2Renewal || 0), 0);
+  const p3FirstTotal = quote.planComparisonItems.reduce((a, i) => a + (i.plan3FirstYear || 0), 0);
+  const p3RenTotal = quote.planComparisonItems.reduce((a, i) => a + (i.plan3Renewal || 0), 0);
+
+  const notes = quote.notes
+    ? quote.notes.split("\n").map((n) => n.trim()).filter(Boolean)
+    : [];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Action Bar */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      {/* Header */}
+      <div className="no-print mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex items-center gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white p-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            aria-label="Teklifler listesine don"
+            className="btn btn-secondary btn-sm shrink-0"
           >
             <ArrowLeft className="h-4 w-4" />
-            Teklifler
+            <span className="hidden sm:inline">Teklifler</span>
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xl font-black text-slate-900">{quote.quoteNumber}</span>
-              <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${
-                  isClassic
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-purple-100 text-purple-800"
-                }`}
-              >
-                {isClassic ? "Klasik Teklif" : "Plan Karşılaştırmalı"}
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900">
+                {quote.quoteNumber}
+              </h1>
+              <span className={`badge ${isClassic ? "badge-brand" : "badge-accent"}`}>
+                {isClassic ? (
+                  <FileText className="h-3 w-3" />
+                ) : (
+                  <Layers className="h-3 w-3" />
+                )}
+                {isClassic ? "Klasik" : "Plan Karsilastirmali"}
               </span>
             </div>
-            <div className="text-xs text-slate-500">
-              Düzenlenme: {formatDate(quote.quoteDate)}
-            </div>
+            <p className="mt-0.5 text-sm text-slate-500">
+              {quote.customerName} &middot; {formatDate(quote.quoteDate)}
+            </p>
           </div>
         </div>
 
-        {/* Action buttons (client component) */}
-        <QuoteActionButtons quoteId={quote.id} quoteType={quote.quoteType} quoteNumber={quote.quoteNumber} />
+        <QuoteActionButtons
+          quoteId={quote.id}
+          quoteType={quote.quoteType}
+          quoteNumber={quote.quoteNumber}
+        />
       </div>
 
-      {/* PDF Visual Container (Mimics exact A4 layout) */}
-      <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white p-8 sm:p-12 shadow-md">
+      {/* Document preview */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
+        {/* Document header */}
+        <div className="flex flex-col gap-5 border-b border-slate-200 p-7 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-3.5">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-sm font-bold text-white">
+              AZ
+            </span>
+            <div className="min-w-0">
+              <p className="text-[15px] font-bold leading-tight text-slate-900">
+                {companyConfig.name}
+              </p>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                {companyConfig.tagline}
+                {quote.preparedByName && (
+                  <>
+                    <br />
+                    Teklif Hazirlayan: <span className="font-medium text-slate-700">{quote.preparedByName}</span>
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 text-left sm:text-right">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-700">
+              {isClassic ? "Teklif / Proforma" : "Plan Karsilastirmali Teklif"}
+            </p>
+            <dl className="mt-2 space-y-1 text-xs">
+              <div className="flex gap-x-3 sm:justify-end">
+                <dt className="text-slate-500">Teklif No:</dt>
+                <dd className="font-semibold text-slate-900">{quote.quoteNumber}</dd>
+              </div>
+              <div className="flex gap-x-3 sm:justify-end">
+                <dt className="text-slate-500">Tarih:</dt>
+                <dd className="font-semibold text-slate-900 tabular">
+                  {formatDate(quote.quoteDate)}
+                </dd>
+              </div>
+              {quote.validUntil && (
+                <div className="flex gap-x-3 sm:justify-end">
+                  <dt className="text-slate-500">Gecerlilik:</dt>
+                  <dd className="font-semibold text-slate-900 tabular">
+                    {formatDate(quote.validUntil)}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        </div>
+
+        {/* Recipient */}
+        <div className="mx-7 mt-6 rounded-lg border border-slate-200 border-l-[3px] border-l-brand-600 bg-slate-50 px-5 py-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-brand-700">
+            Teklif Sunulan Firma
+          </p>
+          <p className="mt-1 text-[15px] font-bold text-slate-900">{quote.customerName}</p>
+          {(quote.customerTaxOffice || quote.customerTaxNumber || quote.customerPhone || quote.customerEmail) && (
+            <p className="mt-1 text-xs text-slate-500">
+              {quote.customerTaxOffice || quote.customerTaxNumber ? (
+                <>
+                  V.D.: {quote.customerTaxOffice || "-"} / {quote.customerTaxNumber || "-"}
+                  {"  \u00b7  "}
+                </>
+              ) : null}
+              {quote.customerPhone && <>Tel: {quote.customerPhone} {"  \u00b7  "}</>}
+              {quote.customerEmail && <>E-posta: {quote.customerEmail}</>}
+            </p>
+          )}
+        </div>
+
+        {/* Body */}
         {isClassic ? (
-          /* CLASSIC VIEW */
-          <div>
-            {/* Header */}
-            <div className="flex justify-between items-start pb-6 border-b border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-700 font-black text-xl text-white">
-                  AZ
-                </div>
-                <div>
-                  <h2 className="text-base font-extrabold text-slate-900">
-                    {companyConfig.name}
-                  </h2>
-                  <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                    {companyConfig.tagline}<br />
-                    {companyConfig.address}<br />
-                    Tel: {companyConfig.phone} | {companyConfig.email}
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div className="text-xl font-black tracking-wider text-blue-700">
-                  TEKLİF / PROFORMA
-                </div>
-                <div className="text-xs text-slate-600 mt-1">
-                  Teklif No: <strong className="text-slate-900">{quote.quoteNumber}</strong>
-                </div>
-                <div className="text-xs text-slate-600">
-                  Tarih: <strong className="text-slate-900">{formatDate(quote.quoteDate)}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Recipient Box */}
-            <div className="my-6 rounded-lg bg-slate-50 p-4 border border-slate-200">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-blue-700 mb-1">
-                İlgili Firmanın
-              </div>
-              <div className="text-sm font-bold text-slate-900">{quote.customerName}</div>
-              <div className="text-xs text-slate-600 mt-1">
-                {quote.customerTaxOffice || quote.customerTaxNumber ? (
-                  <>Vergi Dairesi / No: {quote.customerTaxOffice || "—"} / {quote.customerTaxNumber || "—"}<br /></>
-                ) : null}
-                {quote.customerPhone ? <>Tel: {quote.customerPhone} </> : null}
-                {quote.customerEmail ? <>| E-Posta: {quote.customerEmail}</> : null}
-              </div>
-            </div>
-
-            {/* Items Table */}
-            <div className="overflow-x-auto my-6">
-              <table className="min-w-full text-left text-xs">
-                <thead>
-                  <tr className="bg-blue-700 text-white font-bold uppercase text-[10px] tracking-wider">
-                    <th className="p-2.5 text-center w-8">#</th>
-                    <th className="p-2.5">Açıklama</th>
-                    <th className="p-2.5 text-center w-20">Miktar</th>
-                    <th className="p-2.5 text-right w-28">Birim Fiyat</th>
-                    <th className="p-2.5 text-right w-24">İskonto</th>
-                    <th className="p-2.5 text-right w-28">Tutar</th>
+          <div className="p-7">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="table-head">
+                  <tr>
+                    <th className="w-10 text-center">#</th>
+                    <th>Aciklama</th>
+                    <th className="w-24 text-center">Miktar</th>
+                    <th className="w-32 text-right">Birim Fiyat</th>
+                    <th className="w-24 text-right">Iskonto</th>
+                    <th className="w-32 text-right">Tutar</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="table-body">
                   {quote.classicItems.map((item, idx) => (
                     <tr key={item.id}>
-                      <td className="p-2.5 text-center text-slate-400">{idx + 1}</td>
-                      <td className="p-2.5 font-semibold text-slate-900">{item.displayName}</td>
-                      <td className="p-2.5 text-center">{item.quantity} Adet</td>
-                      <td className="p-2.5 text-right">{formatCurrency(item.unitPrice)}</td>
-                      <td className="p-2.5 text-right text-slate-500">
+                      <td className="text-center text-slate-400 tabular">{idx + 1}</td>
+                      <td className="font-medium text-slate-900">{item.displayName}</td>
+                      <td className="text-center tabular">{item.quantity} Adet</td>
+                      <td className="text-right tabular">{formatCurrency(item.unitPrice)}</td>
+                      <td className="text-right text-slate-500 tabular">
                         {item.lineDiscountValue
                           ? item.lineDiscountType === "PERCENT"
                             ? `%${item.lineDiscountValue}`
                             : formatCurrency(item.lineDiscountValue)
-                          : "—"}
+                          : "-"}
                       </td>
-                      <td className="p-2.5 text-right font-bold text-slate-900">
+                      <td className="text-right font-semibold text-slate-900 tabular">
                         {formatCurrency(item.lineTotal)}
                       </td>
                     </tr>
@@ -165,159 +187,167 @@ export default async function QuoteDetailPage({
               </table>
             </div>
 
-            {/* Totals Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pt-4 border-t border-slate-200">
-              <div className="text-xs text-slate-500 max-w-sm">
-                * Teklifimiz 15 gün süreyle geçerlidir.<br />
-                * Fiyatlarımıza KDV dahil değildir.
+            <div className="mt-7 grid gap-6 border-t border-slate-200 pt-6 lg:grid-cols-2">
+              <div className="order-2 lg:order-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                  Teklif Notlari ve Kosullar
+                </p>
+                {notes.length > 0 ? (
+                  <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-slate-600">
+                    {notes.map((n, i) => (
+                      <li key={i}>{n}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-xs text-slate-400">-</p>
+                )}
               </div>
 
-              <div className="w-full sm:w-72 space-y-2 text-xs">
-                <div className="flex justify-between text-slate-600">
-                  <span>Ara Toplam:</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(quote.subtotal)}</span>
+              <div className="order-1 lg:order-2">
+                <div className="overflow-hidden rounded-lg border border-slate-200">
+                  <dl className="text-sm">
+                    <div className="flex justify-between border-b border-slate-100 px-4 py-2.5">
+                      <dt className="text-slate-500">Ara Toplam</dt>
+                      <dd className="font-medium text-slate-900 tabular">
+                        {formatCurrency(quote.subtotal)}
+                      </dd>
+                    </div>
+                    {quote.generalDiscountValue && quote.generalDiscountValue > 0 ? (
+                      <div className="flex justify-between border-b border-slate-100 px-4 py-2.5">
+                        <dt className="text-slate-500">
+                          Genel Iskonto (
+                          {quote.generalDiscountType === "PERCENT"
+                            ? `%${quote.generalDiscountValue}`
+                            : "Tutar"}
+                          )
+                        </dt>
+                        <dd className="font-medium text-danger-600 tabular">
+                          -{formatCurrency(quote.subtotal - quote.netAfterDiscount)}
+                        </dd>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between border-b border-slate-100 px-4 py-2.5">
+                      <dt className="text-slate-500">Net (KDV Haric)</dt>
+                      <dd className="font-medium text-slate-900 tabular">
+                        {formatCurrency(quote.netAfterDiscount)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between border-b border-slate-100 px-4 py-2.5">
+                      <dt className="text-slate-500">KDV Tutari (%{quote.vatRate})</dt>
+                      <dd className="font-medium text-slate-900 tabular">
+                        {formatCurrency(quote.vatAmount)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between bg-brand-50 px-4 py-3">
+                      <dt className="text-[13px] font-bold uppercase tracking-wide text-brand-800">
+                        Odenecek Toplam
+                      </dt>
+                      <dd className="text-base font-bold text-brand-800 tabular">
+                        {formatCurrency(quote.totalAmount)}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
-                {quote.generalDiscountValue && quote.generalDiscountValue > 0 ? (
-                  <div className="flex justify-between text-red-600">
-                    <span>
-                      Genel İskonto ({quote.generalDiscountType === "PERCENT" ? `%${quote.generalDiscountValue}` : "Tutar"}):
-                    </span>
-                    <span className="font-semibold">
-                      -{formatCurrency(quote.subtotal - quote.netAfterDiscount)}
-                    </span>
-                  </div>
-                ) : null}
-                <div className="flex justify-between text-slate-600">
-                  <span>Net (KDV Hariç):</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(quote.netAfterDiscount)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>KDV Tutarı (%{quote.vatRate}):</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(quote.vatAmount)}</span>
-                </div>
-                <div className="flex justify-between bg-blue-700 text-white font-extrabold text-sm p-3 rounded-lg shadow-xs mt-2">
-                  <span>Ödenecek Toplam:</span>
-                  <span>{formatCurrency(quote.totalAmount)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Thank you footer */}
-            <div className="mt-12 text-center pt-6 border-t border-dashed border-slate-300">
-              <div className="text-xs font-black tracking-widest text-blue-700">
-                BİZİMLE ÇALIŞTIĞINIZ İÇİN TEŞEKKÜR EDERİZ!
               </div>
             </div>
           </div>
         ) : (
-          /* PLAN COMPARISON VIEW */
-          <div>
-            {/* Header */}
-            <div className="flex justify-between items-start pb-6 border-b border-slate-200">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-700 font-black text-lg text-white">
-                  AZ
-                </div>
-                <div>
-                  <h2 className="text-sm font-extrabold text-slate-900">
-                    {companyConfig.name}
-                  </h2>
-                  <p className="text-[11px] text-slate-500 leading-relaxed">
-                    {companyConfig.tagline}<br />
-                    {quote.preparedByName ? <span><strong>Teklif Hazırlayan:</strong> {quote.preparedByName}<br /></span> : null}
-                    Tel: {companyConfig.phone} | {companyConfig.email}
-                  </p>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <div className="text-base font-black text-blue-700">
-                  SAYIN {quote.customerName.toUpperCase()}
-                </div>
-                <div className="text-xs text-slate-600 mt-1">
-                  Teklif No: <strong className="text-slate-900">{quote.quoteNumber}</strong>
-                </div>
-                <div className="text-xs text-slate-600">
-                  Tarih: <strong className="text-slate-900">{formatDate(quote.quoteDate)}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Comparison Grid */}
-            <div className="overflow-x-auto my-6">
-              <table className="min-w-full border-collapse text-left text-xs border border-slate-200">
+          <div className="p-7">
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
                 <thead>
-                  <tr className="border-b border-slate-200 text-center">
-                    <th rowSpan={2} className="p-2 text-left bg-slate-100 font-bold border-r border-slate-200 w-1/3">
-                      Ürün / Çözüm Açıklaması
+                  <tr>
+                    <th
+                      rowSpan={2}
+                      className="w-[34%] border-b border-r border-slate-200 bg-slate-50 px-4 py-2.5 text-left text-[11px] font-bold uppercase tracking-wider text-slate-600"
+                    >
+                      Urun / Cozum Aciklamasi
                     </th>
-                    <th colSpan={2} className="p-1.5 bg-blue-100 text-blue-900 font-black border-r border-slate-200">
+                    <th
+                      colSpan={2}
+                      className="border-b border-l-2 border-brand-200 bg-brand-100 px-4 py-2 text-center text-[13px] font-bold text-brand-800"
+                    >
                       PLAN 1
                     </th>
-                    <th colSpan={2} className="p-1.5 bg-amber-100 text-amber-950 font-black text-sm font-black border-r border-slate-200">
+                    <th
+                      colSpan={2}
+                      className="border-b border-l-2 border-warn-200 bg-warn-100 px-4 py-2 text-center text-[13px] font-bold text-warn-700"
+                    >
                       PLAN 2
                     </th>
-                    <th colSpan={2} className="p-1.5 bg-emerald-100 text-emerald-900 font-black">
+                    <th
+                      colSpan={2}
+                      className="border-b border-l-2 border-success-200 bg-success-50 px-4 py-2 text-center text-[13px] font-bold text-success-700"
+                    >
                       PLAN 3
                     </th>
                   </tr>
-                  <tr className="border-b-2 border-slate-300 text-xs bg-slate-50 text-center">
-                    <th className="p-1.5 font-bold text-blue-800 bg-blue-50/60">İlk Yıl</th>
-                    <th className="p-1.5 font-bold text-blue-800 bg-blue-50/60 border-r border-slate-200">Yenileme</th>
-                    <th className="p-1.5 font-bold text-amber-800 bg-amber-50/60">İlk Yıl</th>
-                    <th className="p-1.5 font-bold text-amber-800 bg-amber-50/60 border-r border-slate-200">Yenileme</th>
-                    <th className="p-1.5 font-bold text-emerald-800 bg-emerald-50/60">İlk Yıl</th>
-                    <th className="p-1.5 font-bold text-emerald-800 bg-emerald-50/60">Yenileme</th>
+                  <tr className="border-b-2 border-slate-300">
+                    {(
+                      [
+                        ["Ilk Yil", "bg-brand-50 text-brand-700", "border-l-2 border-brand-200"],
+                        ["Yenileme", "bg-brand-50 text-brand-700", ""],
+                        ["Ilk Yil", "bg-warn-50 text-warn-700", "border-l-2 border-warn-200"],
+                        ["Yenileme", "bg-warn-50 text-warn-700", ""],
+                        ["Ilk Yil", "bg-success-50 text-success-700", "border-l-2 border-success-200"],
+                        ["Yenileme", "bg-success-50 text-success-700", ""],
+                      ] as const
+                    ).map(([label, tone, brd], i) => (
+                      <th
+                        key={i}
+                        className={`px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-wide ${tone} ${brd}`}
+                      >
+                        {label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody>
                   {quote.planComparisonItems.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50">
-                      <td className="p-2 font-semibold text-slate-900 border-r border-slate-200">
+                    <tr key={item.id} className="border-b border-slate-100">
+                      <td className="border-r border-slate-200 px-4 py-3 text-[13px] font-medium text-slate-900">
                         {item.displayName}
                       </td>
-                      <td className="p-2 text-right bg-blue-50/40 font-bold text-slate-900">
+                      <td className="bg-brand-50/50 px-3 py-3 text-right font-semibold text-slate-900 tabular">
                         {formatCurrency(item.plan1FirstYear)}
                       </td>
-                      <td className="p-2 text-right bg-blue-50/40 border-r border-slate-200">
+                      <td className="bg-brand-50/50 px-3 py-3 text-right text-slate-600 tabular">
                         {formatCurrency(item.plan1Renewal)}
                       </td>
-                      <td className="p-2 text-right bg-amber-50/40 font-bold text-slate-900">
+                      <td className="border-l-2 border-warn-200 bg-warn-50/50 px-3 py-3 text-right font-semibold text-slate-900 tabular">
                         {formatCurrency(item.plan2FirstYear)}
                       </td>
-                      <td className="p-2 text-right bg-amber-50/40 border-r border-slate-200">
+                      <td className="bg-warn-50/50 px-3 py-3 text-right text-slate-600 tabular">
                         {formatCurrency(item.plan2Renewal)}
                       </td>
-                      <td className="p-2 text-right bg-emerald-50/40 font-bold text-slate-900">
+                      <td className="border-l-2 border-success-200 bg-success-50/50 px-3 py-3 text-right font-semibold text-slate-900 tabular">
                         {formatCurrency(item.plan3FirstYear)}
                       </td>
-                      <td className="p-2 text-right bg-emerald-50/40 font-bold text-slate-900">
+                      <td className="bg-success-50/50 px-3 py-3 text-right text-slate-600 tabular">
                         {formatCurrency(item.plan3Renewal)}
                       </td>
                     </tr>
                   ))}
-
-                  {/* Total Row */}
-                  <tr className="font-black text-xs border-t-2 border-slate-300">
-                    <td className="p-2.5 bg-slate-100 text-slate-900 border-r border-slate-200 uppercase">
-                      TOPLAM
+                  <tr className="border-t-2 border-slate-300 bg-slate-50">
+                    <td className="border-r border-slate-200 px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                      Toplam
                     </td>
-                    <td className="p-2.5 text-right text-blue-900 bg-blue-100/80">
+                    <td className="px-3 py-3 text-right font-bold text-brand-800 tabular">
                       {formatCurrency(p1FirstTotal)}
                     </td>
-                    <td className="p-2.5 text-right text-blue-900 bg-blue-100/80 border-r border-slate-200">
+                    <td className="px-3 py-3 text-right font-semibold text-brand-700 tabular">
                       {formatCurrency(p1RenTotal)}
                     </td>
-                    <td className="p-2.5 text-right text-amber-950 bg-amber-100/90">
+                    <td className="border-l-2 border-warn-200 px-3 py-3 text-right font-bold text-warn-700 tabular">
                       {formatCurrency(p2FirstTotal)}
                     </td>
-                    <td className="p-2.5 text-right text-amber-950 bg-amber-100/90 border-r border-slate-200">
+                    <td className="px-3 py-3 text-right font-semibold text-warn-700 tabular">
                       {formatCurrency(p2RenTotal)}
                     </td>
-                    <td className="p-2.5 text-right text-emerald-900 bg-emerald-100/80">
+                    <td className="border-l-2 border-success-200 px-3 py-3 text-right font-bold text-success-700 tabular">
                       {formatCurrency(p3FirstTotal)}
                     </td>
-                    <td className="p-2.5 text-right text-emerald-900 bg-emerald-100/80">
+                    <td className="px-3 py-3 text-right font-semibold text-success-700 tabular">
                       {formatCurrency(p3RenTotal)}
                     </td>
                   </tr>
@@ -325,25 +355,32 @@ export default async function QuoteDetailPage({
               </table>
             </div>
 
-            {/* Notes Section */}
-            {quote.notes && (
-              <div className="rounded-lg bg-slate-50 p-4 border border-slate-200 my-6">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2">
-                  TEKLİF NOTLARI
-                </div>
-                <ul className="list-disc pl-5 space-y-1 text-xs text-slate-600">
-                  {quote.notes
-                    .split("\n")
-                    .map((n) => n.trim())
-                    .filter(Boolean)
-                    .map((line, idx) => (
-                      <li key={idx}>{line}</li>
-                    ))}
+            <div className="mt-6 rounded-lg border border-slate-200 border-l-[3px] border-l-brand-600 bg-slate-50 px-5 py-4">
+              <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
+                Teklif Notlari ve Ticari Kosullar
+              </p>
+              {notes.length > 0 ? (
+                <ul className="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed text-slate-600">
+                  {notes.map((n, i) => (
+                    <li key={i}>{n}</li>
+                  ))}
                 </ul>
-              </div>
-            )}
+              ) : (
+                <p className="mt-2 text-xs text-slate-400">-</p>
+              )}
+            </div>
           </div>
         )}
+
+        {/* Document footer */}
+        <div className="border-t border-slate-200 bg-slate-50 px-7 py-5 text-center">
+          <p className="text-[13px] font-bold tracking-tight text-brand-700">
+            Bizi tercih ettiginiz icin tesekkur ederiz.
+          </p>
+          <p className="mt-1 text-[11px] text-slate-400">
+            Bu belge AzemTeklif sistemi tarafindan olusturulmustur.
+          </p>
+        </div>
       </div>
     </div>
   );

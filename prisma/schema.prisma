@@ -63,6 +63,7 @@ model Quote {
   quoteNumber      String       @unique
   quoteType        QuoteType
   quoteDate        DateTime     @default(now())
+  validUntil       DateTime?
 
   customerName      String
   customerTaxOffice String?
