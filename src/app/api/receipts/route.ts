@@ -120,10 +120,13 @@ export async function POST(request: Request) {
           customerTaxNumber: data.customerTaxNumber?.trim() || null,
           customerPhone: data.customerPhone?.trim() || null,
           customerEmail: data.customerEmail?.trim() || null,
+          customerAddress: data.customerAddress?.trim() || null,
           amount,
           amountInWords,
           paymentMethod: data.paymentMethod,
           description: data.description?.trim() || null,
+          bankInfo: data.bankInfo?.trim() || null,
+          extraNotes: data.extraNotes?.trim() || null,
           preparedByName: data.preparedByName?.trim() || null,
         },
       });

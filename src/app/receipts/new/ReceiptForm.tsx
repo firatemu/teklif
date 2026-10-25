@@ -15,10 +15,12 @@ import {
   Search,
   Wallet,
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency } from "@/lib/formatters";
 import { amountToTurkishWords } from "@/lib/turkish-words";
-import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS, PAYMENT_METHOD_SENTENCE } from "@/lib/payment-methods";
+import { PAYMENT_METHODS, PAYMENT_METHOD_LABELS } from "@/lib/payment-methods";
 import { useToast } from "@/components/ui/Toast";
+import ReceiptPreview, { type ReceiptPreviewData } from "./ReceiptPreview";
+import type { ReceiptCompanyView } from "@/lib/receipt/document";
 
 interface QuoteOption {
   id: number;
@@ -65,24 +67,28 @@ export default function ReceiptForm({
   const [customerTaxNumber, setCustomerTaxNumber] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("CASH");
   const [receiptDate, setReceiptDate] = useState(todayInputValue());
   const [description, setDescription] = useState("");
+  const [bankInfo, setBankInfo] = useState("");
+  const [extraNotes, setExtraNotes] = useState("");
   const [preparedByName, setPreparedByName] = useState("");
 
   const [saving, setSaving] = useState(false);
   const [loadingQuotes, setLoadingQuotes] = useState(true);
-  const [company, setCompany] = useState({
+  const [company, setCompany] = useState<ReceiptCompanyView>({
     name: "Azem Yazılım Bilişim ve Teknolojileri Ltd. Şti.",
     shortName: "Azem Yazılım",
-    tagline: "",
     address: "",
+    city: "",
     taxOffice: "",
     taxNumber: "",
     phone: "",
+    phone2: "",
     email: "",
-    website: "",
+    logoDataUrl: null,
   });
 
   useEffect(() => {
@@ -93,13 +99,14 @@ export default function ReceiptForm({
         setCompany({
           name: data.name || company.name,
           shortName: data.shortName || company.shortName,
-          tagline: data.tagline || "",
           address: data.address || "",
+          city: data.city || "",
           taxOffice: data.taxOffice || "",
           taxNumber: data.taxNumber || "",
           phone: data.phone || "",
+          phone2: data.phone2 || "",
           email: data.email || "",
-          website: data.website || "",
+          logoDataUrl: data.logoDataUrl || null,
         });
       })
       .catch(() => {});
@@ -186,13 +193,27 @@ export default function ReceiptForm({
 
   const amountNumber = Number(amount) || 0;
   const amountInWords = amountNumber > 0 ? amountToTurkishWords(amountNumber) : "";
-  const methodLabel = PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod;
-  const methodSentence =
-    PAYMENT_METHOD_SENTENCE[paymentMethod] ?? methodLabel.toLowerCase();
 
   const remaining = selectedQuote
     ? Math.max((selectedQuote.totalAmount || 0) - (selectedQuote.collectedAmount || 0), 0)
     : 0;
+
+  const previewData: ReceiptPreviewData = {
+    receiptNumber: "TS-…",
+    receiptDate: receiptDate || todayInputValue(),
+    customerName,
+    customerTaxOffice,
+    customerTaxNumber,
+    customerPhone,
+    customerAddress,
+    amount: amountNumber,
+    amountInWords,
+    paymentMethod,
+    description,
+    bankInfo,
+    extraNotes,
+    preparedByName,
+  };
 
   const handleSave = async (withPdf: boolean) => {
     if (!customerName.trim()) {
@@ -216,10 +237,13 @@ export default function ReceiptForm({
           customerTaxNumber,
           customerPhone,
           customerEmail,
+          customerAddress,
           amount: amountNumber,
           paymentMethod,
           receiptDate,
           description,
+          bankInfo,
+          extraNotes,
           preparedByName,
         }),
       });
@@ -423,6 +447,17 @@ export default function ReceiptForm({
                 />
               </div>
 
+              <div className="sm:col-span-2">
+                <label className="block field-label">Adres</label>
+                <input
+                  type="text"
+                  value={customerAddress}
+                  onChange={(e) => setCustomerAddress(e.target.value)}
+                  placeholder="Mahalle / Cadde / No / Daire - İlçe / İl"
+                  className="field"
+                />
+              </div>
+
               <div>
                 <label className="block field-label">Tutar (TL) *</label>
                 <input
@@ -486,6 +521,28 @@ export default function ReceiptForm({
               </div>
 
               <div className="sm:col-span-2">
+                <label className="block field-label">Banka / Hesap Bilgisi</label>
+                <input
+                  type="text"
+                  value={bankInfo}
+                  onChange={(e) => setBankInfo(e.target.value)}
+                  placeholder="Örn: Azem Bankası Şubesi - TR00 0000 0000 0000 0000 00"
+                  className="field"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block field-label">Ek Notlar</label>
+                <input
+                  type="text"
+                  value={extraNotes}
+                  onChange={(e) => setExtraNotes(e.target.value)}
+                  placeholder="Makbuz alt kısmındaki Ek Notlar alanında görünür."
+                  className="field"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
                 <label className="block field-label">Tahsilatı Yapan</label>
                 <input
                   type="text"
@@ -509,204 +566,11 @@ export default function ReceiptForm({
             <span className="text-xs text-slate-400">210 × 148 mm</span>
           </div>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
-            {/* Header: logo + modern firma bilgisi + belge kimlik kartı */}
-            <div className="flex items-start justify-between gap-4 border-b-2 border-brand-800 px-5 py-4">
-              <div className="flex min-w-0 items-start gap-3">
-                <span className="flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-sm">
-                  <span className="flex h-[62px] w-[62px] items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-[16px] font-bold text-white">
-                    {(company.shortName || company.name || "AZ").slice(0, 2).toUpperCase()}
-                  </span>
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate text-[11px] font-black uppercase leading-tight tracking-wide text-slate-900">
-                    {company.name}
-                  </p>
-                  {company.tagline && (
-                    <span className="mt-1 inline-block rounded-[3px] border border-brand-100 bg-brand-50 px-1.5 py-[1px] text-[8px] font-bold uppercase tracking-[0.09em] text-brand-800">
-                      {company.tagline}
-                    </span>
-                  )}
-                  <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-                    <div className="min-w-0">
-                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
-                        Adres
-                      </p>
-                      <p className="truncate text-[9px] font-semibold text-slate-700">
-                        {company.address || "-"}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
-                        Vergi Dairesi / No
-                      </p>
-                      <p className="truncate text-[9px] font-semibold text-slate-700">
-                        {company.taxOffice || company.taxNumber
-                          ? `${company.taxOffice || "-"} / ${company.taxNumber || "-"}`
-                          : "-"}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
-                        Telefon / E-posta
-                      </p>
-                      <p className="truncate text-[9px] font-semibold text-slate-700">
-                        {[company.phone, company.email].filter(Boolean).join(" • ") || "-"}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
-                        Web Sitesi
-                      </p>
-                      <p className="truncate text-[9px] font-semibold text-slate-700">
-                        {company.website || "-"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="shrink-0 overflow-hidden rounded-lg border border-brand-100 shadow-sm">
-                <p className="flex items-center justify-between bg-gradient-to-r from-brand-800 to-brand-600 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-white">
-                  Tahsilat Makbuzu
-                  <span className="text-[7px] font-semibold tracking-[0.07em] text-brand-100">
-                    Belge
-                  </span>
-                </p>
-                <div className="px-3 py-1.5 text-right">
-                  <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Belge No</p>
-                  <p className="text-[12px] font-black text-brand-800">
-                    TS-…
-                    <span className="ml-1 text-[9px] font-normal text-slate-400">(kayıtta atanır)</span>
-                  </p>
-                  <p className="mt-0.5 text-[9px] text-slate-500">
-                    {receiptDate ? formatDate(new Date(receiptDate)) : "-"} • {methodLabel}
-                  </p>
-                </div>
-              </div>
-            </div>
 
-            <table className="w-full text-left">
-              <tbody>
-                <tr>
-                  <th className="w-[22%] border border-slate-200 bg-slate-50 px-2.5 py-2 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                    Tahsilatı Yapan
-                  </th>
-                  <td className="border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-900">
-                    Azem Yazılım Bilişim ve Teknolojileri Ltd. Şti.
-                  </td>
-                </tr>
-                <tr>
-                  <th className="border border-slate-200 bg-slate-50 px-2.5 py-2 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                    Tahsilat Alınan
-                  </th>
-                  <td className="border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-900">
-                    {customerName || "—"}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="border border-slate-200 bg-slate-50 px-2.5 py-2 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                    Ödeme Şekli
-                  </th>
-                  <td className="border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-900">
-                    {methodLabel}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="border border-slate-200 bg-slate-50 px-2.5 py-2 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                    Tutar
-                  </th>
-                  <td className="border border-slate-200 px-2.5 py-2 text-[12px] font-black tabular text-brand-800">
-                    {formatCurrency(amountNumber)}
-                  </td>
-                </tr>
-                <tr>
-                  <th className="border border-slate-200 bg-slate-50 px-2.5 py-2 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                    Yazıyla
-                  </th>
-                  <td className="border border-slate-200 px-2.5 py-2 text-[11px] font-semibold text-slate-900">
-                    {amountInWords || "—"}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div className="mx-5 my-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] leading-relaxed text-slate-600">
-              {description.trim() ||
-                `Yukarıda belirtilen tutar ${methodSentence} ile tahsil edilmiş olup işbu makbuz düzenlenmiştir.`}
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 border-t border-slate-200 px-5 py-3.5">
-              <div className="rounded-lg border border-slate-200">
-                <p className="border-b border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                  Tahsilatı Yapan
-                  <span className="ml-1 float-right text-[8px] font-semibold text-slate-400">
-                    Kaşe ve Paraf
-                  </span>
-                </p>
-                <div className="px-2.5 py-2">
-                  <p className="text-[10px] font-bold text-slate-900">{company.name}</p>
-                  <div className="mt-1.5">
-                    <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
-                      İmza
-                    </p>
-                    <div className="flex items-end gap-2">
-                      <svg
-                        width="38"
-                        height="46"
-                        viewBox="0 0 380 480"
-                        className="block"
-                        aria-hidden="true"
-                      >
-                        <g
-                          fill="none"
-                          stroke="#0f172a"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path
-                            d="M58 392 C 26 316, 44 206, 112 118 C 172 40, 268 4, 318 10 C 334 12, 337 23, 325 31"
-                            strokeWidth={3}
-                            opacity={0.92}
-                          />
-                          <path d="M322 66 C 309 128, 286 204, 259 268" strokeWidth={5.4} opacity={0.95} />
-                          <path d="M259 268 C 238 322, 214 360, 196 381" strokeWidth={2.8} opacity={0.9} />
-                          <path d="M186 382 C 232 288, 276 180, 318 70" strokeWidth={2.6} opacity={0.85} />
-                          <path
-                            d="M92 212 C 160 231, 250 239, 302 244 C 310 292, 268 382, 150 456 C 136 464, 128 471, 139 479"
-                            strokeWidth={3.4}
-                            opacity={0.9}
-                          />
-                          <path d="M126 452 C 136 460, 140 468, 136 476" strokeWidth={2.2} opacity={0.7} />
-                        </g>
-                      </svg>
-                      <div className="pb-1">
-                        <p className="text-[9px] font-bold text-slate-700">{preparedByName || "-"}</p>
-                        <p className="text-[7px] font-bold uppercase tracking-wide text-slate-400">
-                          Tahsil Eden
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-2" />
-                  <p className="border-t border-dashed border-slate-300 pt-1 text-center text-[9px] text-slate-400">
-                    Kaşe / İmza
-                  </p>
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-200">
-                <p className="border-b border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">
-                  Ödemeyi Yapan
-                </p>
-                <div className="px-2.5 py-2">
-                  <p className="truncate text-[10px] font-bold text-slate-900">{customerName || "—"}</p>
-                  <div className="h-6" />
-                  <p className="border-t border-dashed border-slate-300 pt-1 text-center text-[9px] text-slate-400">
-                    Kaşe / İmza
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ReceiptPreview
+            data={previewData}
+            company={company}
+          />
 
           {selectedQuote && (
             <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500">

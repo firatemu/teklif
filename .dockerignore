@@ -20,3 +20,5 @@ DECISIONS.md
 AGENTS.md
 CLAUDE.md
 .cursor
+.tmp-render
+scripts

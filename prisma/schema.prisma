@@ -154,11 +154,14 @@ model PaymentReceipt {
   customerTaxNumber String?
   customerPhone     String?
   customerEmail     String?
+  customerAddress   String?
 
   amount        Float
   amountInWords String
   paymentMethod PaymentMethod
   description   String?
+  bankInfo      String?
+  extraNotes    String?
   preparedByName String?
 
   createdAt DateTime @default(now())

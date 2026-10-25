@@ -34,7 +34,13 @@ export async function GET() {
   const settings = await getOrCreateSettings();
   // Don't send logoBase64 in list - it can be huge
   const { logoBase64, ...rest } = settings;
-  return NextResponse.json({ ...rest, hasLogo: !!logoBase64 });
+  return NextResponse.json({
+    ...rest,
+    hasLogo: !!logoBase64,
+    logoDataUrl: logoBase64
+      ? `data:${settings.logoMimeType || "image/png"};base64,${logoBase64}`
+      : null,
+  });
 }
 
 export async function PUT(request: Request) {
