@@ -134,9 +134,15 @@ export function renderReceiptMarkup(
             }"><span class="box"></span>${escapeHtml(choice.label)}</span>`
   ).join("");
 
-  const descriptionText =
-    receipt.description?.trim() ||
-    "Yukarıda belirtilen tutar ile tahsil edilmiş olup işbu makbuz düzenlenmiştir.";
+  const descriptionParts: string[] = [];
+  if (receipt.quoteNumber) descriptionParts.push(`Teklif No: ${receipt.quoteNumber}`);
+  if (receipt.description?.trim()) descriptionParts.push(receipt.description.trim());
+  if (descriptionParts.length === 0) {
+    descriptionParts.push(
+      "Yukarıda belirtilen tutar ile tahsil edilmiş olup işbu makbuz düzenlenmiştir."
+    );
+  }
+  const descriptionText = descriptionParts.join(" - ");
 
   return `
   <main class="sheet">
