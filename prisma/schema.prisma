@@ -33,6 +33,13 @@ enum PriceBasis {
   RENEWAL
 }
 
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  CHECK
+}
+
 model Product {
   id            Int         @id @default(autoincrement())
   category      String
@@ -89,6 +96,7 @@ model Quote {
 
   classicItems        QuoteClassicItem[]
   planComparisonItems QuotePlanComparisonItem[]
+  receipts            PaymentReceipt[]
 }
 
 model QuoteClassicItem {
@@ -131,6 +139,32 @@ model QuotePlanComparisonItem {
   plan3Renewal   Float
 
   sortOrder     Int      @default(0)
+}
+
+model PaymentReceipt {
+  id            Int      @id @default(autoincrement())
+  receiptNumber String   @unique
+  receiptDate   DateTime @default(now())
+
+  quoteId Int?
+  quote   Quote? @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+
+  customerName      String
+  customerTaxOffice String?
+  customerTaxNumber String?
+  customerPhone     String?
+  customerEmail     String?
+
+  amount        Float
+  amountInWords String
+  paymentMethod PaymentMethod
+  description   String?
+  preparedByName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([quoteId])
 }
 
 model CompanySettings {

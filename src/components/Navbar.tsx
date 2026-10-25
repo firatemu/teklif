@@ -10,10 +10,12 @@ import {
   Menu,
   X,
   ChevronDown,
+  Receipt,
 } from "lucide-react";
 
 const NAV = [
   { href: "/", label: "Teklifler", icon: FileText },
+  { href: "/receipts", label: "Tahsilat Makbuzları", icon: Receipt },
   { href: "/products", label: "Ürün Kataloğu", icon: Package },
   { href: "/settings", label: "Ayarlar", icon: Settings },
 ];

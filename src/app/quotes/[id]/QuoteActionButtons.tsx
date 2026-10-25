@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Download, Edit, Copy, Trash2 } from "lucide-react";
+import { Download, Edit, Copy, Trash2, Receipt } from "lucide-react";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 
@@ -77,6 +77,10 @@ export default function QuoteActionButtons({
           <Download className="h-4 w-4" />
           PDF Indir
         </button>
+        <Link href={`/receipts/new?quoteId=${quoteId}`} className="btn btn-secondary">
+          <Receipt className="h-3.5 w-3.5" />
+          Tahsilat Makbuzu
+        </Link>
         <Link href={editPath} className="btn btn-secondary">
           <Edit className="h-3.5 w-3.5" />
           Duzenle

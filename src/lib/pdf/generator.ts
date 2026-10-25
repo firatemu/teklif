@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer";
 import { renderClassicTemplate, renderPlanComparisonTemplate } from "./templates";
+import { renderReceiptTemplate } from "./receipt-template";
 import { prisma } from "@/lib/db";
 
 export interface CompanySettingsForPdf {
@@ -87,6 +88,46 @@ export async function generateQuotePdf(quote: any): Promise<Buffer> {
         right: "12mm",
         bottom: "12mm",
         left: "12mm",
+      },
+    });
+
+    return Buffer.from(pdfBuffer);
+  } finally {
+    await browser.close();
+  }
+}
+
+/** Tahsilat Makbuzu — A5 yatay (210 x 148 mm) PDF üretir. */
+export async function generateReceiptPdf(receipt: any): Promise<Buffer> {
+  const company = await getCompanySettingsForPdf();
+  const html = renderReceiptTemplate(receipt, company);
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+    ],
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, {
+      waitUntil: "domcontentloaded",
+    });
+    await page.evaluate(() => document.fonts.ready);
+
+    const pdfBuffer = await page.pdf({
+      format: "A5",
+      landscape: true,
+      printBackground: true,
+      margin: {
+        top: "0",
+        right: "0",
+        bottom: "0",
+        left: "0",
       },
     });
 

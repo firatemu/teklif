@@ -3,7 +3,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { companyConfig } from "@/config/company";
 import { formatCurrency, formatDate } from "@/lib/formatters";
-import { ArrowLeft, FileText, Printer, Layers } from "lucide-react";
+import { paymentMethodLabel } from "@/lib/payment-methods";
+import { ArrowLeft, FileText, Printer, Layers, Receipt } from "lucide-react";
 import QuoteActionButtons from "./QuoteActionButtons";
 
 export default async function QuoteDetailPage({
@@ -37,6 +38,14 @@ export default async function QuoteDetailPage({
   const notes = quote.notes
     ? quote.notes.split("\n").map((n) => n.trim()).filter(Boolean)
     : [];
+
+  const receipts = await prisma.paymentReceipt.findMany({
+    where: { quoteId: quote.id },
+    orderBy: { receiptDate: "desc" },
+  });
+
+  const collectedAmount = receipts.reduce((acc, r) => acc + (r.amount || 0), 0);
+  const remainingAmount = Math.max((quote.totalAmount || 0) - collectedAmount, 0);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
@@ -77,6 +86,36 @@ export default async function QuoteDetailPage({
           quoteNumber={quote.quoteNumber}
         />
       </div>
+
+      {/* Collection summary */}
+      {isClassic && (
+        <div className="no-print mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Teklif Tutarı
+            </p>
+            <p className="mt-1 text-lg font-bold tabular text-slate-900">
+              {formatCurrency(quote.totalAmount)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Tahsil Edilen
+            </p>
+            <p className="mt-1 text-lg font-bold tabular text-success-700">
+              {formatCurrency(collectedAmount)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+              Kalan
+            </p>
+            <p className="mt-1 text-lg font-bold tabular text-brand-800">
+              {formatCurrency(remainingAmount)}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Document preview */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
@@ -381,6 +420,56 @@ export default async function QuoteDetailPage({
             Bu belge AzemTeklif sistemi tarafindan olusturulmustur.
           </p>
         </div>
+      </div>
+
+      {/* Receipts */}
+      <div className="no-print mt-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+            <Receipt className="h-4 w-4 text-brand-600" />
+            Tahsilat Makbuzlari
+          </h2>
+          <Link href={`/receipts/new?quoteId=${quote.id}`} className="btn btn-secondary btn-sm">
+            Yeni Makbuz
+          </Link>
+        </div>
+
+        {receipts.length === 0 ? (
+          <p className="px-5 py-6 text-center text-sm text-slate-400">
+            Bu teklif icin henuz tahsilat makbuzu olusturulmadi.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="table-head">
+                <tr>
+                  <th>Makbuz No</th>
+                  <th>Tarih</th>
+                  <th>Odeme Sekli</th>
+                  <th className="text-right">Tutar</th>
+                </tr>
+              </thead>
+              <tbody className="table-body">
+                {receipts.map((r) => (
+                  <tr key={r.id}>
+                    <td className="whitespace-nowrap font-semibold text-brand-700">
+                      {r.receiptNumber}
+                    </td>
+                    <td className="whitespace-nowrap tabular text-slate-600">
+                      {formatDate(r.receiptDate)}
+                    </td>
+                    <td className="whitespace-nowrap text-slate-600">
+                      {paymentMethodLabel(r.paymentMethod)}
+                    </td>
+                    <td className="whitespace-nowrap text-right font-semibold tabular text-slate-900">
+                      {formatCurrency(r.amount)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
