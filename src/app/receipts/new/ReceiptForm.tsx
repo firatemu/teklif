@@ -508,8 +508,8 @@ export default function ReceiptForm({
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
             {/* Header: logo + belge kimlik bandı */}
             <div className="flex items-start justify-between gap-4 border-b-2 border-brand-800 px-5 py-3.5">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-[11px] font-bold text-white">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-[15px] font-bold text-white">
                   {(company.shortName || company.name || "AZ").slice(0, 2).toUpperCase()}
                 </span>
                 <div className="min-w-0">
@@ -521,6 +521,9 @@ export default function ReceiptForm({
                       {company.tagline}
                     </p>
                   )}
+                  <p className="truncate text-[9px] text-slate-500">
+                    {company.address ? `${company.address}` : ""}
+                  </p>
                 </div>
               </div>
               <div className="shrink-0 overflow-hidden rounded-md border border-slate-200">
@@ -606,31 +609,39 @@ export default function ReceiptForm({
                         Paraf
                       </p>
                       <svg
-                        width="116"
-                        height="26"
-                        viewBox="0 0 116 28"
+                        width="122"
+                        height="30"
+                        viewBox="0 0 122 30"
                         className="block"
                         aria-hidden="true"
                       >
                         <path
-                          d="M5 22 C 13 5, 24 3, 26 13 C 28 23, 18 26, 16 18 C 14 10, 27 5, 39 13 C 47 19, 41 25, 45 19 C 51 8, 61 6, 63 14 C 65 22, 56 25, 56 16 C 56 8, 70 6, 80 14 C 86 20, 82 23, 86 18 C 92 8, 103 10, 111 14"
+                          d="M7 23 C 11 8, 20 5, 22 13 C 24 21, 15 26, 14 18 C 13 10, 23 7, 32 12 C 39 16, 36 23, 41 18 C 47 10, 57 7, 59 14 C 61 21, 51 25, 53 16 C 55 8, 67 7, 75 13 C 80 17, 77 23, 82 17 C 87 9, 97 9, 105 13 C 111 16, 113 20, 115 16"
                           fill="none"
                           stroke="#0f172a"
-                          strokeWidth={1.5}
+                          strokeWidth={1.6}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          opacity={0.85}
+                          opacity={0.9}
                         />
                         <path
-                          d="M28 25 C 42 21, 58 22, 74 20"
+                          d="M5 27 C 32 23, 64 24, 117 18"
                           fill="none"
                           stroke="#0f172a"
-                          strokeWidth={0.9}
+                          strokeWidth={1}
                           strokeLinecap="round"
-                          opacity={0.45}
+                          opacity={0.55}
+                        />
+                        <path
+                          d="M97 7 C 104 2, 112 3, 114 7"
+                          fill="none"
+                          stroke="#0f172a"
+                          strokeWidth={1}
+                          strokeLinecap="round"
+                          opacity={0.4}
                         />
                       </svg>
-                      <p className="mt-[-3px] text-[8px] font-bold text-slate-700">
+                      <p className="mt-[-4px] text-[8px] font-bold text-slate-700">
                         {preparedByName || "-"}
                       </p>
                     </div>

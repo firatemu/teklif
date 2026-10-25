@@ -20,7 +20,9 @@ function escapeHtml(value: string | null | undefined): string {
 
 function renderLogo(company: CompanySettingsForPdf): string {
   if (company.logoDataUrl) {
-    return `<img src="${company.logoDataUrl}" style="height: 46px; max-width: 52px; object-fit: contain; display: block;" alt="Logo" />`;
+    return `<div style="width: 70px; height: 70px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff; display: flex; align-items: center; justify-content: center; padding: 6px;">
+      <img src="${company.logoDataUrl}" style="max-width: 100%; max-height: 58px; object-fit: contain; display: block;" alt="Logo" />
+    </div>`;
   }
   const initials = (company.shortName || company.name || "AZ")
     .split(" ")
@@ -29,26 +31,27 @@ function renderLogo(company: CompanySettingsForPdf): string {
     .substring(0, 2)
     .toUpperCase();
 
-  return `<div style="width: 42px; height: 42px; background: linear-gradient(135deg, #1e4b93, #2d60b0); border-radius: 8px; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; letter-spacing: 0.5px;">${initials}</div>`;
+  return `<div style="width: 70px; height: 70px; background: linear-gradient(135deg, #1e4b93, #2d60b0); border-radius: 8px; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;">${initials}</div>`;
 }
 
 /**
  * Tahsilatı yapan taraf için paraf (initial) imzası.
- * Kaşe alanının üstünde el yazısı görünümlü imza çizgisi ve parafçı adı yer alır.
+ * Akıcı el yazısı formunda imza çizgisi, alt flourishes ve parafçı adı.
  */
 function renderParafSignature(parapName: string): string {
   return `
-    <div style="display: table; width: 100%; margin-top: 6px;">
-      <div style="display: table-cell; width: 64%; vertical-align: bottom;">
+    <div style="display: table; width: 100%; margin-top: 7px;">
+      <div style="display: table-cell; width: 66%; vertical-align: bottom;">
         <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.7px; color: #64748b; text-transform: uppercase;">Paraf</span>
-        <svg width="116" height="28" viewBox="0 0 116 28" style="display: block; margin-top: 1px;">
-          <path d="M5 22 C 13 5, 24 3, 26 13 C 28 23, 18 26, 16 18 C 14 10, 27 5, 39 13 C 47 19, 41 25, 45 19 C 51 8, 61 6, 63 14 C 65 22, 56 25, 56 16 C 56 8, 70 6, 80 14 C 86 20, 82 23, 86 18 C 92 8, 103 10, 111 14"
-            fill="none" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.85" />
-          <path d="M28 25 C 42 21, 58 22, 74 20" fill="none" stroke="#0f172a" stroke-width="0.9" stroke-linecap="round" opacity="0.45" />
+        <svg width="122" height="30" viewBox="0 0 122 30" style="display: block; margin-top: 2px;">
+          <path d="M7 23 C 11 8, 20 5, 22 13 C 24 21, 15 26, 14 18 C 13 10, 23 7, 32 12 C 39 16, 36 23, 41 18 C 47 10, 57 7, 59 14 C 61 21, 51 25, 53 16 C 55 8, 67 7, 75 13 C 80 17, 77 23, 82 17 C 87 9, 97 9, 105 13 C 111 16, 113 20, 115 16"
+            fill="none" stroke="#0f172a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+          <path d="M5 27 C 32 23, 64 24, 117 18" fill="none" stroke="#0f172a" stroke-width="1" stroke-linecap="round" opacity="0.55" />
+          <path d="M97 7 C 104 2, 112 3, 114 7" fill="none" stroke="#0f172a" stroke-width="1" stroke-linecap="round" opacity="0.4" />
         </svg>
-        <div style="font-size: 7.5px; font-weight: 700; color: #334155; margin-top: -3px;">${escapeHtml(parapName || "-")}</div>
+        <div style="font-size: 7.5px; font-weight: 700; color: #334155; margin-top: -4px;">${escapeHtml(parapName || "-")}</div>
       </div>
-      <div style="display: table-cell; width: 36%; vertical-align: bottom; padding-left: 10px;">
+      <div style="display: table-cell; width: 34%; vertical-align: bottom; padding-left: 10px;">
         <span style="font-size: 7px; font-weight: 800; letter-spacing: 0.7px; color: #64748b; text-transform: uppercase;">Tarih</span>
         <div style="border-bottom: 1px dashed #94a3b8; height: 16px;"></div>
       </div>
@@ -56,16 +59,16 @@ function renderParafSignature(parapName: string): string {
 }
 
 /**
- * İmza bloğu. Tahsilatı yapan tarafta ek olarak paraf imzası alanı bulunur.
+ * İmza bloğu. Yalnızca taraf adı yer alır; vergi numarası/adres gibi detaylar
+ * belge başlığında toplanmıştır. Tahsilatı yapan tarafta ayrıca paraf imzası bulunur.
  */
 function renderSignatureBlock(options: {
   title: string;
   partyName: string;
-  partyDetail: string;
   withParap?: boolean;
   parapName?: string;
 }): string {
-  const { title, partyName, partyDetail, withParap = false, parapName = "" } = options;
+  const { title, partyName, withParap = false, parapName = "" } = options;
 
   const parapField = withParap ? renderParafSignature(parapName) : "";
 
@@ -78,11 +81,10 @@ function renderSignatureBlock(options: {
           withParap ? "Kaşe ve Paraf" : "Kaşe / İmza"
         }</span>
       </div>
-      <div style="padding: 8px 10px 4px 10px;">
+      <div style="padding: 9px 10px 4px 10px;">
         <div style="font-size: 9.5px; font-weight: 800; color: #0f172a; line-height: 1.35; text-transform: uppercase;">${escapeHtml(partyName)}</div>
-        ${partyDetail ? `<div style="font-size: 8px; color: #64748b; margin-top: 2px; line-height: 1.4;">${escapeHtml(partyDetail)}</div>` : ""}
         ${parapField}
-        <div style="height: ${withParap ? "12px" : "26px"};"></div>
+        <div style="height: ${withParap ? "14px" : "30px"};"></div>
         <div style="border-top: 1px dashed #94a3b8; padding-top: 4px; text-align: center;">
           <span style="font-size: 7.5px; color: #94a3b8; letter-spacing: 0.5px;">Kaşe / İmza</span>
         </div>
@@ -99,22 +101,6 @@ export function renderReceiptTemplate(
   const methodLabel = PAYMENT_METHOD_LABELS[method] ?? method;
   const methodSentence =
     PAYMENT_METHOD_SENTENCE[method] ?? methodLabel.toLowerCase();
-
-  const customerDetailParts = [
-    receipt.customerTaxOffice || receipt.customerTaxNumber
-      ? `V.D.: ${receipt.customerTaxOffice || "-"} / ${receipt.customerTaxNumber || "-"}`
-      : "",
-    receipt.customerPhone ? `Tel: ${receipt.customerPhone}` : "",
-    receipt.customerEmail ? `E-posta: ${receipt.customerEmail}` : "",
-  ].filter(Boolean);
-
-  const companyDetailParts = [
-    company.address,
-    company.taxOffice || company.taxNumber
-      ? `V.D.: ${company.taxOffice || "-"} / ${company.taxNumber || "-"}`
-      : "",
-    company.website,
-  ].filter(Boolean);
 
   const descriptionText = receipt.description
     ? escapeHtml(receipt.description)
@@ -174,19 +160,19 @@ export function renderReceiptTemplate(
   <table>
     <tr>
       <!-- Logo + Company -->
-      <td style="vertical-align: top; width: 42%;">
+      <td style="vertical-align: top; width: 46%;">
         <div style="display: table; width: 100%;">
-          <div style="display: table-cell; vertical-align: top; width: 48px;">
+          <div style="display: table-cell; vertical-align: top; width: 70px;">
             ${renderLogo(company)}
           </div>
-          <div style="display: table-cell; vertical-align: top; padding-left: 9px;">
+          <div style="display: table-cell; vertical-align: middle; padding-left: 10px;">
             <div style="font-size: 9.5px; font-weight: 900; color: #0f172a; line-height: 1.25; text-transform: uppercase;">${escapeHtml(company.name)}</div>
             ${
               company.tagline
-                ? `<div style="font-size: 7.5px; font-weight: 700; color: #1e4b93; letter-spacing: 0.6px; margin-top: 2px; text-transform: uppercase;">${escapeHtml(company.tagline)}</div>`
+                ? `<div style="font-size: 7px; font-weight: 700; color: #1e4b93; letter-spacing: 0.6px; margin-top: 2px; text-transform: uppercase;">${escapeHtml(company.tagline)}</div>`
                 : ""
             }
-            <div style="font-size: 7.5px; color: #64748b; margin-top: 3px; line-height: 1.5;">
+            <div style="font-size: 7px; color: #64748b; margin-top: 3px; line-height: 1.45;">
               ${[
                 company.address ? `${company.city ? company.city + ", " : ""}${company.address}` : "",
                 company.taxOffice || company.taxNumber
@@ -204,37 +190,33 @@ export function renderReceiptTemplate(
       </td>
 
       <!-- Document identity -->
-      <td style="vertical-align: top; text-align: right; width: 58%;">
-        <div style="display: inline-block; text-align: left; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; min-width: 205px;">
-          <div style="background: #1e4b93; padding: 5px 10px;">
-            <span style="font-size: 8.5px; font-weight: 900; letter-spacing: 1.1px; color: #ffffff; text-transform: uppercase;">Tahsilat Makbuzu</span>
+      <td style="vertical-align: top; text-align: right; width: 54%;">
+        <div style="display: inline-block; text-align: left; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; min-width: 196px;">
+          <div style="background: #1e4b93; padding: 4px 9px;">
+            <span style="font-size: 8px; font-weight: 900; letter-spacing: 1.1px; color: #ffffff; text-transform: uppercase;">Tahsilat Makbuzu</span>
           </div>
           <table>
             <tr>
-              <td style="padding: 5px 10px; border-bottom: 1px solid #f1f5f9; width: 52%;">
-                <span style="font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Belge No</span>
-                <div style="font-size: 10px; font-weight: 900; color: #1e4b93; letter-spacing: 0.3px; margin-top: 1px;">${escapeHtml(receipt.receiptNumber)}</div>
+              <td style="padding: 4px 9px; border-bottom: 1px solid #f1f5f9; width: 52%;">
+                <span style="font-size: 6.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Belge No</span>
+                <div style="font-size: 9.5px; font-weight: 900; color: #1e4b93; letter-spacing: 0.3px; margin-top: 1px;">${escapeHtml(receipt.receiptNumber)}</div>
               </td>
-              <td style="padding: 5px 10px; border-bottom: 1px solid #f1f5f9; border-left: 1px solid #f1f5f9; width: 48%;">
-                <span style="font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Makbuz Tarihi</span>
-                <div style="font-size: 10px; font-weight: 800; color: #0f172a; margin-top: 1px;">${formatDate(receipt.receiptDate)}</div>
+              <td style="padding: 4px 9px; border-bottom: 1px solid #f1f5f9; border-left: 1px solid #f1f5f9; width: 48%;">
+                <span style="font-size: 6.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Makbuz Tarihi</span>
+                <div style="font-size: 9.5px; font-weight: 800; color: #0f172a; margin-top: 1px;">${formatDate(receipt.receiptDate)}</div>
               </td>
             </tr>
             <tr>
-              <td style="padding: 5px 10px;">
-                <span style="font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Düzenleyen</span>
-                <div style="font-size: 9px; font-weight: 700; color: #0f172a; margin-top: 1px;">${escapeHtml(receipt.preparedByName || "-")}</div>
+              <td style="padding: 4px 9px;">
+                <span style="font-size: 6.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Düzenleyen</span>
+                <div style="font-size: 8.5px; font-weight: 700; color: #0f172a; margin-top: 1px;">${escapeHtml(receipt.preparedByName || "-")}</div>
               </td>
-              <td style="padding: 5px 10px; border-left: 1px solid #f1f5f9;">
-                <span style="font-size: 7.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Ödeme Şekli</span>
-                <div style="font-size: 9px; font-weight: 700; color: #0f172a; margin-top: 1px;">${escapeHtml(methodLabel)}</div>
+              <td style="padding: 4px 9px; border-left: 1px solid #f1f5f9;">
+                <span style="font-size: 6.5px; font-weight: 700; letter-spacing: 0.6px; color: #64748b; text-transform: uppercase;">Ödeme Şekli</span>
+                <div style="font-size: 8.5px; font-weight: 700; color: #0f172a; margin-top: 1px;">${escapeHtml(methodLabel)}</div>
               </td>
             </tr>
           </table>
-          <div style="background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 4px 10px; font-size: 7.5px; color: #475569;">
-            <span style="font-weight: 700; letter-spacing: 0.5px;">BELGE TÜRÜ:</span> Tahsilat Makbuzu
-            &nbsp;•&nbsp; <span style="font-weight: 700; letter-spacing: 0.5px;">PARA BİRİMİ:</span> TRY (₺)
-          </div>
         </div>
       </td>
     </tr>
@@ -279,14 +261,12 @@ export function renderReceiptTemplate(
     ${renderSignatureBlock({
       title: "Tahsilatı Yapan",
       partyName: company.name,
-      partyDetail: companyDetailParts.join(" • "),
       withParap: true,
       parapName: receipt.preparedByName || "",
     })}
     ${renderSignatureBlock({
       title: "Ödemeyi Yapan",
       partyName: receipt.customerName,
-      partyDetail: customerDetailParts.join(" • "),
     })}
   </tr>
 </table>
