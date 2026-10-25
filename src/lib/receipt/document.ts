@@ -36,14 +36,6 @@ const PAYMENT_CHOICES: { value: string; label: string }[] = [
   { value: "OTHER", label: "Diğer" },
 ];
 
-const ICON_LOCATION =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7zm0 10a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>';
-const ICON_PHONE =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.2 11 11 0 0 0 3.5.6 1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1A18.9 18.9 0 0 1 2.7 4.5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11 11 0 0 0 .6 3.5 1 1 0 0 1-.2 1z"/></svg>';
-const ICON_MAIL =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5h20v14H2zm2 2v.5l8 5 8-5V7l-8 5z"/></svg>';
-const ICON_DOC =
-  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h16v20H4zm3 4v2h10V6zm0 4v2h10v-2zm0 4v2h6v-2z"/></svg>';
 const ICON_DOC_SMALL =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h16v20H4zm3 4v2h10V6zm0 4v2h10v-2zm0 4v2h6v-2z"/></svg>';
 const ICON_COINS =
@@ -123,12 +115,15 @@ export function renderReceiptMarkup(
     minute: "2-digit",
   }).format(receiptDate);
 
-  const taxText =
-    receipt.customerTaxOffice || receipt.customerTaxNumber
-      ? `${receipt.customerTaxOffice ? receipt.customerTaxOffice + " / " : ""}${
-          receipt.customerTaxNumber || "-"
-        }`
+  const companyTaxText =
+    company.taxOffice || company.taxNumber
+      ? `${company.taxOffice || "-"} / ${company.taxNumber || "-"}`
       : "-";
+  const companyAddressText = company.address
+    ? `${company.city ? company.city + ", " : ""}${company.address}`
+    : "-";
+  const companyPhoneText =
+    [company.phone, company.phone2].filter(Boolean).join(" / ") || "-";
 
   const paymentChoices = PAYMENT_CHOICES.map(
     (choice) => `
@@ -150,25 +145,8 @@ export function renderReceiptMarkup(
   return `
   <main class="sheet">
     <header class="header">
-      <section class="company">
+      <section class="company" aria-label="Firma logosu">
         ${renderLogo(company)}
-        <div class="company-info">
-          <h2 class="company-name">${escapeHtml(company.name)}</h2>
-          <div class="meta-line multiline">${ICON_LOCATION}<span>${escapeHtml(
-            company.address
-              ? `${company.city ? company.city + ", " : ""}${company.address}`
-              : "-"
-          )}</span></div>
-          <div class="meta-line">${ICON_PHONE}<span>${escapeHtml(
-            [company.phone, company.phone2].filter(Boolean).join(" / ") || "-"
-          )}</span></div>
-          <div class="meta-line">${ICON_MAIL}<span>${escapeHtml(company.email || "-")}</span></div>
-          <div class="meta-line">${ICON_DOC}<span>${escapeHtml(
-            company.taxOffice || company.taxNumber
-              ? `${company.taxOffice || "-"} / ${company.taxNumber || "-"}`
-              : "-"
-          )}</span></div>
-        </div>
       </section>
 
       <div class="title">
@@ -189,10 +167,10 @@ export function renderReceiptMarkup(
     <section class="section">
       ${sectionHeading(1, "Tahsil Edilen Kişi / Firma")}
       <div class="section-body">
-        ${writeRow("Ad Soyad / Firma Ünvanı", receipt.customerName || "-")}
-        ${writeRow("T.C. / Vergi No", taxText)}
-        ${writeRow("Telefon", receipt.customerPhone || "-")}
-        ${writeRow("Adres", receipt.customerAddress || "-", { tall: true })}
+        ${writeRow("Ad Soyad / Firma Ünvanı", company.name || "-")}
+        ${writeRow("T.C. / Vergi No", companyTaxText)}
+        ${writeRow("Telefon", companyPhoneText)}
+        ${writeRow("Adres", companyAddressText, { tall: true })}
       </div>
     </section>
 
@@ -307,23 +285,22 @@ export function receiptStyles(): string {
   .header {
     min-height: 24mm;
     display: grid;
-    grid-template-columns: 1.02fr 1.12fr 0.78fr;
+    grid-template-columns: 26mm 1.2fr 0.78fr;
     align-items: center;
     gap: 3mm;
   }
 
   .company {
-    display: grid;
-    grid-template-columns: 16mm 1fr;
-    gap: 2mm;
+    display: flex;
     align-items: center;
+    justify-content: center;
     min-width: 0;
   }
 
   .logo-img,
   .logo-fallback {
-    width: 15mm;
-    height: 16mm;
+    width: 22mm;
+    height: 23mm;
     object-fit: contain;
     display: block;
   }
@@ -332,60 +309,13 @@ export function receiptStyles(): string {
     background: linear-gradient(135deg, #102d48, #157f9a);
     border-radius: 2mm;
     color: #ffffff;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
     line-height: 1;
-  }
-
-  .company-info { min-width: 0; }
-
-  .company-name {
-    margin: 0 0 1.5mm;
-    font-size: 14px;
-    line-height: 1.05;
-    max-height: 8.8mm;
-    overflow: hidden;
-    font-weight: 800;
-    letter-spacing: 0.015em;
-    text-transform: uppercase;
-    color: var(--navy);
-  }
-
-  .meta-line {
-    display: flex;
-    align-items: flex-start;
-    gap: 1mm;
-    margin: 0.4mm 0;
-    color: #31485e;
-    font-size: 7px;
-    line-height: 1.15;
-  }
-
-  .meta-line svg { margin-top: 0.2mm; }
-
-  .meta-line svg {
-    width: 2.5mm;
-    height: 2.5mm;
-    flex: 0 0 2.5mm;
-    fill: var(--navy);
-  }
-
-  .meta-line span {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
-  .meta-line.multiline span {
-    white-space: normal;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    max-height: 4.6mm;
   }
 
   .title {
