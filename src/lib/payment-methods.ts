@@ -3,6 +3,7 @@ export const PAYMENT_METHODS = [
   "BANK_TRANSFER",
   "CREDIT_CARD",
   "CHECK",
+  "OTHER",
 ] as const;
 
 export type PaymentMethodValue = (typeof PAYMENT_METHODS)[number];
@@ -13,6 +14,7 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
   BANK_TRANSFER: "Havale / EFT",
   CREDIT_CARD: "Kredi Kartı",
   CHECK: "Çek",
+  OTHER: "Diğer",
 };
 
 /** Makbuz cümlesinde kullanılan küçük harfli biçimler. */
@@ -21,6 +23,7 @@ export const PAYMENT_METHOD_SENTENCE: Record<string, string> = {
   BANK_TRANSFER: "havale/EFT",
   CREDIT_CARD: "kredi kartı",
   CHECK: "çek",
+  OTHER: "diğer",
 };
 
 export function isPaymentMethod(value: unknown): value is PaymentMethodValue {

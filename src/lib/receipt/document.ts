@@ -33,6 +33,7 @@ const PAYMENT_CHOICES: { value: string; label: string }[] = [
   { value: "BANK_TRANSFER", label: "Banka Havalesi" },
   { value: "CREDIT_CARD", label: "Kredi Kartı" },
   { value: "CHECK", label: "Çek" },
+  { value: "OTHER", label: "Diğer" },
 ];
 
 const ICON_LOCATION =
@@ -42,6 +43,8 @@ const ICON_PHONE =
 const ICON_MAIL =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5h20v14H2zm2 2v.5l8 5 8-5V7l-8 5z"/></svg>';
 const ICON_DOC =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h16v20H4zm3 4v2h10V6zm0 4v2h10v-2zm0 4v2h6v-2z"/></svg>';
+const ICON_DOC_SMALL =
   '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2h16v20H4zm3 4v2h10V6zm0 4v2h10v-2zm0 4v2h6v-2z"/></svg>';
 const ICON_COINS =
   '<svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><ellipse cx="24" cy="10" rx="14" ry="6" stroke="#4bc4df" stroke-width="3"/><path d="M10 10v8c0 3 6 6 14 6s14-3 14-6v-8M10 18v8c0 3 6 6 14 6s14-3 14-6v-8M10 26v8c0 3 6 6 14 6s14-3 14-6v-8" stroke="#4bc4df" stroke-width="3"/></svg>';
@@ -151,7 +154,7 @@ export function renderReceiptMarkup(
         ${renderLogo(company)}
         <div class="company-info">
           <h2 class="company-name">${escapeHtml(company.name)}</h2>
-          <div class="meta-line">${ICON_LOCATION}<span>${escapeHtml(
+          <div class="meta-line multiline">${ICON_LOCATION}<span>${escapeHtml(
             company.address
               ? `${company.city ? company.city + ", " : ""}${company.address}`
               : "-"
@@ -201,7 +204,11 @@ export function renderReceiptMarkup(
         <div class="form-row">
           <div class="field-label"><strong>Ödeme Türü</strong></div>
           <span class="colon">:</span>
-          <div class="payment-options">${paymentChoices}</div>
+          <div class="payment-options">${paymentChoices}${
+            method === "OTHER" && receipt.otherPaymentMethod
+              ? `<span class="other-payment">${escapeHtml(receipt.otherPaymentMethod)}</span>`
+              : ""
+          }</div>
         </div>
         ${writeRow("Banka / Hesap Bilgisi", receipt.bankInfo || "-")}
         ${writeRow("Açıklama", descriptionText, { tall: true })}
@@ -232,18 +239,10 @@ export function renderReceiptMarkup(
         </div>
         <div class="sign-line"></div>
       </div>
-      <div class="signature">
-        <strong>Onay</strong>
-        <div class="sign-holder"></div>
-        <div class="sign-line"></div>
-      </div>
-      <div class="signature">
-        <div class="stamp">Kaşe / İmza</div>
-      </div>
     </footer>
 
     <div class="bottom">
-      <p>&#9636; &nbsp;Bu makbuz ilgili tahsilat işlemi için düzenlenmiştir.</p>
+      <p class="note-icon">${ICON_DOC_SMALL}Bu makbuz ilgili tahsilat işlemi için düzenlenmiştir.</p>
       <div class="bottom-rule"></div>
       <div class="notes">
         <strong>Ek Notlar:</strong>
@@ -348,7 +347,7 @@ export function receiptStyles(): string {
     margin: 0 0 1.5mm;
     font-size: 14px;
     line-height: 1.05;
-    max-height: 8mm;
+    max-height: 8.8mm;
     overflow: hidden;
     font-weight: 800;
     letter-spacing: 0.015em;
@@ -358,13 +357,15 @@ export function receiptStyles(): string {
 
   .meta-line {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1mm;
-    margin: 0.6mm 0;
+    margin: 0.4mm 0;
     color: #31485e;
     font-size: 7px;
     line-height: 1.15;
   }
+
+  .meta-line svg { margin-top: 0.2mm; }
 
   .meta-line svg {
     width: 2.5mm;
@@ -377,6 +378,14 @@ export function receiptStyles(): string {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  .meta-line.multiline span {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-height: 4.6mm;
   }
 
   .title {
@@ -535,6 +544,18 @@ export function receiptStyles(): string {
     color: var(--muted);
   }
 
+  .payment-options .other-payment {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: var(--navy);
+    font-weight: 600;
+    font-size: 8px;
+    border-bottom: 1px dotted #506a80;
+    padding: 0 1mm;
+  }
+
   .payment-choice.active {
     color: var(--navy);
     font-weight: 700;
@@ -624,7 +645,7 @@ export function receiptStyles(): string {
   .signatures {
     min-height: 19mm;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     align-items: stretch;
     padding: 1mm;
     border: 1px solid var(--line);
@@ -672,20 +693,11 @@ export function receiptStyles(): string {
   }
 
   .signature .sign-line {
-    width: 100%;
+    width: 78%;
+    max-width: 38mm;
     height: 5mm;
+    margin: 0 auto;
     border-bottom: 1px solid #8298a9;
-  }
-
-  .stamp {
-    min-height: 15mm;
-    width: 100%;
-    display: grid;
-    place-items: center;
-    border: 1px dotted #94aabc;
-    border-radius: 1mm;
-    color: var(--muted);
-    font-size: 9px;
   }
 
   /* ---------- ALT BİLGİ ---------- */
@@ -698,7 +710,14 @@ export function receiptStyles(): string {
     font-size: 7px;
   }
 
-  .bottom p { margin: 0; }
+  .bottom p { margin: 0; display: flex; align-items: center; gap: 1.5mm; }
+
+  .bottom .note-icon svg {
+    width: 2.6mm;
+    height: 2.6mm;
+    flex: 0 0 2.6mm;
+    fill: #334b62;
+  }
 
   .bottom-rule { height: 1px; background: #b7c7d2; }
 

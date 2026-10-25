@@ -70,6 +70,7 @@ export default function ReceiptForm({
   const [customerAddress, setCustomerAddress] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("CASH");
+  const [otherPaymentMethod, setOtherPaymentMethod] = useState("");
   const [receiptDate, setReceiptDate] = useState(todayInputValue());
   const [description, setDescription] = useState("");
   const [bankInfo, setBankInfo] = useState("");
@@ -209,6 +210,7 @@ export default function ReceiptForm({
     amount: amountNumber,
     amountInWords,
     paymentMethod,
+    otherPaymentMethod,
     description,
     bankInfo,
     extraNotes,
@@ -240,6 +242,7 @@ export default function ReceiptForm({
           customerAddress,
           amount: amountNumber,
           paymentMethod,
+          otherPaymentMethod,
           receiptDate,
           description,
           bankInfo,
@@ -508,6 +511,19 @@ export default function ReceiptForm({
                   })}
                 </div>
               </div>
+
+              {paymentMethod === "OTHER" && (
+                <div className="sm:col-span-2">
+                  <label className="block field-label">Diğer Ödeme Türü</label>
+                  <input
+                    type="text"
+                    value={otherPaymentMethod}
+                    onChange={(e) => setOtherPaymentMethod(e.target.value)}
+                    placeholder="Örn: Kredi Kartı / Pos cihazı / Havale/EFT"
+                    className="field"
+                  />
+                </div>
+              )}
 
               <div className="sm:col-span-2">
                 <label className="block field-label">Açıklama / Not</label>

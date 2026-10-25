@@ -22,6 +22,7 @@ export interface ReceiptPreviewData {
   amount: number;
   amountInWords: string;
   paymentMethod: string;
+  otherPaymentMethod: string;
   description: string;
   bankInfo: string;
   extraNotes: string;

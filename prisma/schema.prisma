@@ -38,6 +38,7 @@ enum PaymentMethod {
   BANK_TRANSFER
   CREDIT_CARD
   CHECK
+  OTHER
 }
 
 model Product {
@@ -159,6 +160,7 @@ model PaymentReceipt {
   amount        Float
   amountInWords String
   paymentMethod PaymentMethod
+  otherPaymentMethod String?
   description   String?
   bankInfo      String?
   extraNotes    String?

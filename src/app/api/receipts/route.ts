@@ -106,7 +106,19 @@ export async function POST(request: Request) {
       }
     }
 
-    const receiptDate = data.receiptDate ? new Date(data.receiptDate) : new Date();
+    // Form yalnızca tarih (YYYY-MM-DD) gönderir; saat bilgisini kayıt anından al.
+    const receiptDate = (() => {
+      const now = new Date();
+      if (!data.receiptDate) return now;
+      const raw = String(data.receiptDate).trim();
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+      if (!match) {
+        const parsed = new Date(raw);
+        return Number.isNaN(parsed.getTime()) ? now : parsed;
+      }
+      const [, y, m, d] = match.map(Number);
+      return new Date(y, m - 1, d, now.getHours(), now.getMinutes(), now.getSeconds());
+    })();
     const amountInWords = amountToTurkishWords(amount);
 
     const receipt = await prisma.$transaction(async (tx) => {
@@ -124,6 +136,7 @@ export async function POST(request: Request) {
           amount,
           amountInWords,
           paymentMethod: data.paymentMethod,
+          otherPaymentMethod: data.otherPaymentMethod?.trim() || null,
           description: data.description?.trim() || null,
           bankInfo: data.bankInfo?.trim() || null,
           extraNotes: data.extraNotes?.trim() || null,
