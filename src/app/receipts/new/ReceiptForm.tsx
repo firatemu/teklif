@@ -80,6 +80,8 @@ export default function ReceiptForm({
     address: "",
     taxOffice: "",
     taxNumber: "",
+    phone: "",
+    email: "",
     website: "",
   });
 
@@ -95,6 +97,8 @@ export default function ReceiptForm({
           address: data.address || "",
           taxOffice: data.taxOffice || "",
           taxNumber: data.taxNumber || "",
+          phone: data.phone || "",
+          email: data.email || "",
           website: data.website || "",
         });
       })
@@ -506,29 +510,67 @@ export default function ReceiptForm({
           </div>
 
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
-            {/* Header: logo + belge kimlik bandı */}
-            <div className="flex items-start justify-between gap-4 border-b-2 border-brand-800 px-5 py-3.5">
-              <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-[15px] font-bold text-white">
-                  {(company.shortName || company.name || "AZ").slice(0, 2).toUpperCase()}
+            {/* Header: logo + modern firma bilgisi + belge kimlik kartı */}
+            <div className="flex items-start justify-between gap-4 border-b-2 border-brand-800 px-5 py-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="flex h-[78px] w-[78px] shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-gradient-to-b from-white to-slate-50 shadow-sm">
+                  <span className="flex h-[62px] w-[62px] items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-[16px] font-bold text-white">
+                    {(company.shortName || company.name || "AZ").slice(0, 2).toUpperCase()}
+                  </span>
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-[11px] font-bold uppercase leading-tight text-slate-900">
+                  <p className="truncate text-[11px] font-black uppercase leading-tight tracking-wide text-slate-900">
                     {company.name}
                   </p>
                   {company.tagline && (
-                    <p className="truncate text-[9px] font-semibold uppercase tracking-wide text-brand-700">
+                    <span className="mt-1 inline-block rounded-[3px] border border-brand-100 bg-brand-50 px-1.5 py-[1px] text-[8px] font-bold uppercase tracking-[0.09em] text-brand-800">
                       {company.tagline}
-                    </p>
+                    </span>
                   )}
-                  <p className="truncate text-[9px] text-slate-500">
-                    {company.address ? `${company.address}` : ""}
-                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                    <div className="min-w-0">
+                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
+                        Adres
+                      </p>
+                      <p className="truncate text-[9px] font-semibold text-slate-700">
+                        {company.address || "-"}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
+                        Vergi Dairesi / No
+                      </p>
+                      <p className="truncate text-[9px] font-semibold text-slate-700">
+                        {company.taxOffice || company.taxNumber
+                          ? `${company.taxOffice || "-"} / ${company.taxNumber || "-"}`
+                          : "-"}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
+                        Telefon / E-posta
+                      </p>
+                      <p className="truncate text-[9px] font-semibold text-slate-700">
+                        {[company.phone, company.email].filter(Boolean).join(" • ") || "-"}
+                      </p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[7px] font-bold uppercase tracking-[0.07em] text-slate-400">
+                        Web Sitesi
+                      </p>
+                      <p className="truncate text-[9px] font-semibold text-slate-700">
+                        {company.website || "-"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="shrink-0 overflow-hidden rounded-md border border-slate-200">
-                <p className="bg-brand-800 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-white">
+              <div className="shrink-0 overflow-hidden rounded-lg border border-brand-100 shadow-sm">
+                <p className="flex items-center justify-between bg-gradient-to-r from-brand-800 to-brand-600 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-white">
                   Tahsilat Makbuzu
+                  <span className="text-[7px] font-semibold tracking-[0.07em] text-brand-100">
+                    Belge
+                  </span>
                 </p>
                 <div className="px-3 py-1.5 text-right">
                   <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Belge No</p>
@@ -603,56 +645,49 @@ export default function ReceiptForm({
                 </p>
                 <div className="px-2.5 py-2">
                   <p className="text-[10px] font-bold text-slate-900">{company.name}</p>
-                  <div className="mt-1.5 flex items-end gap-2">
-                    <div className="flex-1">
-                      <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
-                        Paraf
-                      </p>
+                  <div className="mt-1.5">
+                    <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                      İmza
+                    </p>
+                    <div className="flex items-end gap-2">
                       <svg
-                        width="122"
-                        height="30"
-                        viewBox="0 0 122 30"
+                        width="38"
+                        height="46"
+                        viewBox="0 0 380 480"
                         className="block"
                         aria-hidden="true"
                       >
-                        <path
-                          d="M7 23 C 11 8, 20 5, 22 13 C 24 21, 15 26, 14 18 C 13 10, 23 7, 32 12 C 39 16, 36 23, 41 18 C 47 10, 57 7, 59 14 C 61 21, 51 25, 53 16 C 55 8, 67 7, 75 13 C 80 17, 77 23, 82 17 C 87 9, 97 9, 105 13 C 111 16, 113 20, 115 16"
+                        <g
                           fill="none"
                           stroke="#0f172a"
-                          strokeWidth={1.6}
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          opacity={0.9}
-                        />
-                        <path
-                          d="M5 27 C 32 23, 64 24, 117 18"
-                          fill="none"
-                          stroke="#0f172a"
-                          strokeWidth={1}
-                          strokeLinecap="round"
-                          opacity={0.55}
-                        />
-                        <path
-                          d="M97 7 C 104 2, 112 3, 114 7"
-                          fill="none"
-                          stroke="#0f172a"
-                          strokeWidth={1}
-                          strokeLinecap="round"
-                          opacity={0.4}
-                        />
+                        >
+                          <path
+                            d="M58 392 C 26 316, 44 206, 112 118 C 172 40, 268 4, 318 10 C 334 12, 337 23, 325 31"
+                            strokeWidth={3}
+                            opacity={0.92}
+                          />
+                          <path d="M322 66 C 309 128, 286 204, 259 268" strokeWidth={5.4} opacity={0.95} />
+                          <path d="M259 268 C 238 322, 214 360, 196 381" strokeWidth={2.8} opacity={0.9} />
+                          <path d="M186 382 C 232 288, 276 180, 318 70" strokeWidth={2.6} opacity={0.85} />
+                          <path
+                            d="M92 212 C 160 231, 250 239, 302 244 C 310 292, 268 382, 150 456 C 136 464, 128 471, 139 479"
+                            strokeWidth={3.4}
+                            opacity={0.9}
+                          />
+                          <path d="M126 452 C 136 460, 140 468, 136 476" strokeWidth={2.2} opacity={0.7} />
+                        </g>
                       </svg>
-                      <p className="mt-[-4px] text-[8px] font-bold text-slate-700">
-                        {preparedByName || "-"}
-                      </p>
-                    </div>
-                    <div className="w-1/3">
-                      <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
-                        Tarih
-                      </p>
-                      <div className="h-[14px] border-b border-dashed border-slate-300" />
+                      <div className="pb-1">
+                        <p className="text-[9px] font-bold text-slate-700">{preparedByName || "-"}</p>
+                        <p className="text-[7px] font-bold uppercase tracking-wide text-slate-400">
+                          Tahsil Eden
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="h-3" />
+                  <div className="h-2" />
                   <p className="border-t border-dashed border-slate-300 pt-1 text-center text-[9px] text-slate-400">
                     Kaşe / İmza
                   </p>
