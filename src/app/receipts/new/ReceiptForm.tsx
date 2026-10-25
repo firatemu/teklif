@@ -73,6 +73,34 @@ export default function ReceiptForm({
 
   const [saving, setSaving] = useState(false);
   const [loadingQuotes, setLoadingQuotes] = useState(true);
+  const [company, setCompany] = useState({
+    name: "Azem Yazılım Bilişim ve Teknolojileri Ltd. Şti.",
+    shortName: "Azem Yazılım",
+    tagline: "",
+    address: "",
+    taxOffice: "",
+    taxNumber: "",
+    website: "",
+  });
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setCompany({
+          name: data.name || company.name,
+          shortName: data.shortName || company.shortName,
+          tagline: data.tagline || "",
+          address: data.address || "",
+          taxOffice: data.taxOffice || "",
+          taxNumber: data.taxNumber || "",
+          website: data.website || "",
+        });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchQuotes = useCallback(async () => {
     try {
@@ -478,17 +506,38 @@ export default function ReceiptForm({
           </div>
 
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md">
-            <div className="border-b border-slate-200 px-5 py-3.5">
-              <p className="text-[13px] font-black uppercase tracking-[0.12em] text-brand-800">
-                Tahsilat Makbuzu
-              </p>
-              <p className="mt-0.5 text-xs font-bold text-slate-900">
-                TS-…
-                <span className="ml-2 font-normal text-slate-400">(numara kayıtta atanır)</span>
-              </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">
-                Tarih: {receiptDate ? formatDate(new Date(receiptDate)) : "-"}
-              </p>
+            {/* Header: logo + belge kimlik bandı */}
+            <div className="flex items-start justify-between gap-4 border-b-2 border-brand-800 px-5 py-3.5">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-[11px] font-bold text-white">
+                  {(company.shortName || company.name || "AZ").slice(0, 2).toUpperCase()}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-bold uppercase leading-tight text-slate-900">
+                    {company.name}
+                  </p>
+                  {company.tagline && (
+                    <p className="truncate text-[9px] font-semibold uppercase tracking-wide text-brand-700">
+                      {company.tagline}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="shrink-0 overflow-hidden rounded-md border border-slate-200">
+                <p className="bg-brand-800 px-3 py-1 text-[9px] font-bold uppercase tracking-[0.1em] text-white">
+                  Tahsilat Makbuzu
+                </p>
+                <div className="px-3 py-1.5 text-right">
+                  <p className="text-[9px] font-bold uppercase tracking-wide text-slate-400">Belge No</p>
+                  <p className="text-[12px] font-black text-brand-800">
+                    TS-…
+                    <span className="ml-1 text-[9px] font-normal text-slate-400">(kayıtta atanır)</span>
+                  </p>
+                  <p className="mt-0.5 text-[9px] text-slate-500">
+                    {receiptDate ? formatDate(new Date(receiptDate)) : "-"} • {methodLabel}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <table className="w-full text-left">
@@ -545,10 +594,54 @@ export default function ReceiptForm({
               <div className="rounded-lg border border-slate-200">
                 <p className="border-b border-slate-200 bg-slate-50 px-2.5 py-1.5 text-[9px] font-bold uppercase tracking-wide text-slate-500">
                   Tahsilatı Yapan
+                  <span className="ml-1 float-right text-[8px] font-semibold text-slate-400">
+                    Kaşe ve Paraf
+                  </span>
                 </p>
                 <div className="px-2.5 py-2">
-                  <p className="text-[10px] font-bold text-slate-900">Azem Yazılım</p>
-                  <div className="h-6" />
+                  <p className="text-[10px] font-bold text-slate-900">{company.name}</p>
+                  <div className="mt-1.5 flex items-end gap-2">
+                    <div className="flex-1">
+                      <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                        Paraf
+                      </p>
+                      <svg
+                        width="116"
+                        height="26"
+                        viewBox="0 0 116 28"
+                        className="block"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M5 22 C 13 5, 24 3, 26 13 C 28 23, 18 26, 16 18 C 14 10, 27 5, 39 13 C 47 19, 41 25, 45 19 C 51 8, 61 6, 63 14 C 65 22, 56 25, 56 16 C 56 8, 70 6, 80 14 C 86 20, 82 23, 86 18 C 92 8, 103 10, 111 14"
+                          fill="none"
+                          stroke="#0f172a"
+                          strokeWidth={1.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          opacity={0.85}
+                        />
+                        <path
+                          d="M28 25 C 42 21, 58 22, 74 20"
+                          fill="none"
+                          stroke="#0f172a"
+                          strokeWidth={0.9}
+                          strokeLinecap="round"
+                          opacity={0.45}
+                        />
+                      </svg>
+                      <p className="mt-[-3px] text-[8px] font-bold text-slate-700">
+                        {preparedByName || "-"}
+                      </p>
+                    </div>
+                    <div className="w-1/3">
+                      <p className="text-[8px] font-bold uppercase tracking-wide text-slate-400">
+                        Tarih
+                      </p>
+                      <div className="h-[14px] border-b border-dashed border-slate-300" />
+                    </div>
+                  </div>
+                  <div className="h-3" />
                   <p className="border-t border-dashed border-slate-300 pt-1 text-center text-[9px] text-slate-400">
                     Kaşe / İmza
                   </p>
