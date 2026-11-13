@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Download,
+  Edit,
   FileText,
   Plus,
   Receipt,
@@ -232,6 +233,14 @@ export default function ReceiptsPage() {
                     </td>
                     <td>
                       <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/receipts/${r.id}/edit`}
+                          className="icon-btn"
+                          title="Düzenle"
+                          aria-label={`${r.receiptNumber} düzenle`}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Link>
                         <button
                           type="button"
                           onClick={() => window.open(`/api/receipts/${r.id}/pdf`, "_blank")}

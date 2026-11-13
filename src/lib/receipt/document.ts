@@ -115,15 +115,12 @@ export function renderReceiptMarkup(
     minute: "2-digit",
   }).format(receiptDate);
 
-  const companyTaxText =
-    company.taxOffice || company.taxNumber
-      ? `${company.taxOffice || "-"} / ${company.taxNumber || "-"}`
+  const customerTaxText =
+    receipt.customerTaxOffice || receipt.customerTaxNumber
+      ? `${receipt.customerTaxOffice || "-"} / ${receipt.customerTaxNumber || "-"}`
       : "-";
-  const companyAddressText = company.address
-    ? `${company.city ? company.city + ", " : ""}${company.address}`
-    : "-";
-  const companyPhoneText =
-    [company.phone, company.phone2].filter(Boolean).join(" / ") || "-";
+  const customerAddressText = receipt.customerAddress?.trim() || "-";
+  const customerPhoneText = receipt.customerPhone?.trim() || "-";
 
   const paymentChoices = PAYMENT_CHOICES.map(
     (choice) => `
@@ -167,10 +164,10 @@ export function renderReceiptMarkup(
     <section class="section">
       ${sectionHeading(1, "Tahsil Edilen Kişi / Firma")}
       <div class="section-body">
-        ${writeRow("Ad Soyad / Firma Ünvanı", company.name || "-")}
-        ${writeRow("T.C. / Vergi No", companyTaxText)}
-        ${writeRow("Telefon", companyPhoneText)}
-        ${writeRow("Adres", companyAddressText, { tall: true })}
+        ${writeRow("Ad Soyad / Firma Ünvanı", receipt.customerName || "-")}
+        ${writeRow("T.C. / Vergi No", customerTaxText)}
+        ${writeRow("Telefon", customerPhoneText)}
+        ${writeRow("Adres", customerAddressText, { tall: true })}
       </div>
     </section>
 

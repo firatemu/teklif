@@ -49,33 +49,78 @@ function todayInputValue(): string {
   return new Date(now.getTime() - offset * 60 * 1000).toISOString().slice(0, 10);
 }
 
+function dateInputFromIso(value: string): string {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return todayInputValue();
+  const offset = parsed.getTimezoneOffset();
+  return new Date(parsed.getTime() - offset * 60 * 1000).toISOString().slice(0, 10);
+}
+
+export interface EditableReceipt {
+  id: number;
+  receiptNumber: string;
+  receiptDate: string;
+  quoteId: number | null;
+  customerName: string;
+  customerTaxOffice: string | null;
+  customerTaxNumber: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  customerAddress: string | null;
+  amount: number;
+  paymentMethod: string;
+  otherPaymentMethod: string | null;
+  description: string | null;
+  bankInfo: string | null;
+  extraNotes: string | null;
+  preparedByName: string | null;
+}
+
 export default function ReceiptForm({
-  initialQuoteId,
+  initialQuoteId = null,
+  initialReceipt = null,
 }: {
-  initialQuoteId: number | null;
+  initialQuoteId?: number | null;
+  initialReceipt?: EditableReceipt | null;
 }) {
   const router = useRouter();
   const notify = useToast();
 
   const [quotes, setQuotes] = useState<QuoteOption[]>([]);
   const [quoteSearch, setQuoteSearch] = useState("");
-  const [quoteId, setQuoteId] = useState<number | null>(initialQuoteId);
+  const [quoteId, setQuoteId] = useState<number | null>(
+    initialReceipt?.quoteId ?? initialQuoteId
+  );
   const [selectedQuote, setSelectedQuote] = useState<QuoteOption | null>(null);
 
-  const [customerName, setCustomerName] = useState("");
-  const [customerTaxOffice, setCustomerTaxOffice] = useState("");
-  const [customerTaxNumber, setCustomerTaxNumber] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [customerAddress, setCustomerAddress] = useState("");
-  const [amount, setAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<string>("CASH");
-  const [otherPaymentMethod, setOtherPaymentMethod] = useState("");
-  const [receiptDate, setReceiptDate] = useState(todayInputValue());
-  const [description, setDescription] = useState("");
-  const [bankInfo, setBankInfo] = useState("");
-  const [extraNotes, setExtraNotes] = useState("");
-  const [preparedByName, setPreparedByName] = useState("");
+  const [customerName, setCustomerName] = useState(initialReceipt?.customerName ?? "");
+  const [customerTaxOffice, setCustomerTaxOffice] = useState(
+    initialReceipt?.customerTaxOffice ?? ""
+  );
+  const [customerTaxNumber, setCustomerTaxNumber] = useState(
+    initialReceipt?.customerTaxNumber ?? ""
+  );
+  const [customerPhone, setCustomerPhone] = useState(initialReceipt?.customerPhone ?? "");
+  const [customerEmail, setCustomerEmail] = useState(initialReceipt?.customerEmail ?? "");
+  const [customerAddress, setCustomerAddress] = useState(initialReceipt?.customerAddress ?? "");
+  const [amount, setAmount] = useState(
+    initialReceipt ? String(initialReceipt.amount) : ""
+  );
+  const [paymentMethod, setPaymentMethod] = useState<string>(
+    initialReceipt?.paymentMethod ?? "CASH"
+  );
+  const [otherPaymentMethod, setOtherPaymentMethod] = useState(
+    initialReceipt?.otherPaymentMethod ?? ""
+  );
+  const [receiptDate, setReceiptDate] = useState(
+    initialReceipt ? dateInputFromIso(initialReceipt.receiptDate) : todayInputValue()
+  );
+  const [description, setDescription] = useState(initialReceipt?.description ?? "");
+  const [bankInfo, setBankInfo] = useState(initialReceipt?.bankInfo ?? "");
+  const [extraNotes, setExtraNotes] = useState(initialReceipt?.extraNotes ?? "");
+  const [preparedByName, setPreparedByName] = useState(
+    initialReceipt?.preparedByName ?? ""
+  );
 
   const [saving, setSaving] = useState(false);
   const [loadingQuotes, setLoadingQuotes] = useState(true);
@@ -127,6 +172,7 @@ export default function ReceiptForm({
       const collected = new Map<number, number>();
       receipts.forEach((item: any) => {
         if (!item.quoteId) return;
+        if (initialReceipt && item.id === initialReceipt.id) return;
         collected.set(
           item.quoteId,
           (collected.get(item.quoteId) || 0) + (item.amount || 0)
@@ -152,25 +198,31 @@ export default function ReceiptForm({
     } finally {
       setLoadingQuotes(false);
     }
-  }, [notify]);
+  }, [notify, initialReceipt]);
 
   useEffect(() => {
     fetchQuotes();
   }, [fetchQuotes]);
 
-  // Teklif seçimi: müşteri bilgilerini ve tutarı otomatik doldur
-  const appliedQuoteId = useRef<number | null>(null);
+  // Teklif seçimi: müşteri bilgilerini ve tutarı otomatik doldur.
+  // Düzenlemede ilk yükleme kayıtlı değerleri ezmez.
+  const appliedQuoteId = useRef<number | null | undefined>(undefined);
+  const skipQuoteAutofill = useRef(Boolean(initialReceipt));
   useEffect(() => {
-    if (quoteId === appliedQuoteId.current) return;
-    appliedQuoteId.current = quoteId;
-
     if (!quoteId) {
+      appliedQuoteId.current = null;
       setSelectedQuote(null);
       return;
     }
     const q = quotes.find((item) => item.id === quoteId);
     if (!q) return;
     setSelectedQuote(q);
+    if (appliedQuoteId.current === quoteId) return;
+    appliedQuoteId.current = quoteId;
+    if (skipQuoteAutofill.current) {
+      skipQuoteAutofill.current = false;
+      return;
+    }
     setCustomerName(q.customerName);
     setCustomerTaxOffice(q.customerTaxOffice || "");
     setCustomerTaxNumber(q.customerTaxNumber || "");
@@ -200,7 +252,7 @@ export default function ReceiptForm({
     : 0;
 
   const previewData: ReceiptPreviewData = {
-    receiptNumber: "TS-…",
+    receiptNumber: initialReceipt?.receiptNumber || "TS-…",
     receiptDate: receiptDate || todayInputValue(),
     customerName,
     customerTaxOffice,
@@ -229,8 +281,10 @@ export default function ReceiptForm({
 
     try {
       setSaving(true);
-      const res = await fetch("/api/receipts", {
-        method: "POST",
+      const res = await fetch(
+        initialReceipt ? `/api/receipts/${initialReceipt.id}` : "/api/receipts",
+        {
+        method: initialReceipt ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quoteId,
@@ -256,7 +310,12 @@ export default function ReceiptForm({
         return;
       }
 
-      notify.success("Makbuz kaydedildi", data.receiptNumber + " numaralı makbuz oluşturuldu.");
+      notify.success(
+        initialReceipt ? "Makbuz güncellendi" : "Makbuz kaydedildi",
+        initialReceipt
+          ? data.receiptNumber + " numaralı makbuz güncellendi."
+          : data.receiptNumber + " numaralı makbuz oluşturuldu."
+      );
       if (withPdf) {
         window.open(`/api/receipts/${data.id}/pdf`, "_blank");
       }
@@ -281,10 +340,14 @@ export default function ReceiptForm({
           <div className="min-w-0">
             <h1 className="page-title">
               <Receipt className="h-6 w-6 text-brand-600" />
-              Yeni Tahsilat Makbuzu
+              {initialReceipt
+                ? `Tahsilat Makbuzunu Düzenle (${initialReceipt.receiptNumber})`
+                : "Yeni Tahsilat Makbuzu"}
             </h1>
             <p className="page-subtitle">
-              Mevcut bir tekliften tahsilat oluşturun veya serbest tutar ile makbuz düzenleyin.
+              {initialReceipt
+                ? "Makbuz numarası aynı kalır. Müşteri, tutar ve ödeme bilgilerini güncelleyebilirsiniz."
+                : "Mevcut bir tekliften tahsilat oluşturun veya serbest tutar ile makbuz düzenleyin."}
             </p>
           </div>
         </div>
